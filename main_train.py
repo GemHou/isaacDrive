@@ -43,6 +43,9 @@ def main():
         loss_sum.backward()
         optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
+
+    torch.save(agent.state_dict(), "./data/interim/state_dict_temp.pt")
+
     plt.cla()
     plt.plot(list_loss)
     plt.show()
