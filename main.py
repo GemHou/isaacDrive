@@ -1,10 +1,11 @@
 import time
 import numpy as np
 
-BAG_NUM = 200
+BAG_NUM = 20
 
 
 def main():
+    # file name 2 npz
     start_time = time.time()
     list_str_path = [
         "./data/raw/PL004_event_ddp_expert_event_20230509-162021_0.bag.2ba4e5d23f5007cc82f234b8f0fc1061.npz",
@@ -207,13 +208,25 @@ def main():
         "./data/raw/PL004_event_ddp_expert_event_20230510-120023_0.bag.dc6adfe75aa8ca27c55619c11d54e41c.npz",
         "./data/raw/PL004_event_ddp_expert_event_20230510-143837_0.bag.adfda910b229b40ff9abdb8428d85a57.npz",
         "./data/raw/PL004_event_ddp_expert_event_20230510-144653_0.bag.eb352e856a29fc7b20f17737779e11b1.npz",
-        ]
+    ]
     list_str_path = list_str_path[:BAG_NUM]
     list_npz_data = []
     for str_path in list_str_path:
         npz_data = np.load(str_path, allow_pickle=False)
         list_npz_data.append(npz_data)
-    print("load data time per bag (ms): ", (time.time() - start_time) * 1000 / BAG_NUM)
+    print("file name 2 npz time per bag (ms): ", (time.time() - start_time) * 1000 / BAG_NUM)
+
+    # npz 2 numpy
+    start_time = time.time()
+    list_tensor = []
+    for npz_data in list_npz_data:
+        vectornet_object_feature = npz_data['vectornet_object_feature']
+        vectornet_object_mask = npz_data['vectornet_object_mask']
+        vectornet_static_feature = npz_data['vectornet_static_feature']
+        ego_gt_traj = npz_data['ego_gt_traj']
+        ego_gt_traj_hist = npz_data['ego_gt_traj_hist']
+        ego_gt_traj_long = npz_data['ego_gt_traj_long']
+    print("npz 2 tensor time per bag (ms): ", (time.time() - start_time) * 1000 / BAG_NUM)
 
     print("Finished...")
 
