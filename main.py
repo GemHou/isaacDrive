@@ -304,7 +304,7 @@ class MLP(nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
-        # x = x.view(batch_size, seq_len, output_size)  # 将输出tensor恢复为[batch_size, seq_len, output_size]的形状
+        x = torch.tanh(x) * 10
         return x
 
 
@@ -332,13 +332,13 @@ def main():
 
     start_time = time.time()
 
-    for epoch in range(5000):
+    for epoch in range(2000):
         optimizer.zero_grad()
 
         # generate action
         if True:  # model
-            tensor_bag_action_xy = model(tensor_bag_obs)
-            tensor_bag_action_xy = torch.clamp(tensor_bag_action_xy, min=-1, max=1)
+            tensor_bag_action_xy = model(tensor_bag_obs)  # [20, 254, 2]
+            # tensor_bag_action_xy = torch.clamp(tensor_bag_action_xy, min=-1, max=1)
         else:  # random
             tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2,
                                                device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
@@ -350,16 +350,27 @@ def main():
         loss_sum = loss.sum()
         print("loss_sum: ", loss_sum)
         list_loss.append(loss_sum.item())
-        if epoch % 100 == 0:
+        if epoch % 20 == 0:
+            # plt.cla()
+            # plt.plot(list_loss)
+            # plt.pause(0.0000000001)
+
             plt.cla()
-            plt.plot(list_loss)
+            tensor_oneTime_other_pos_start = tensor_bag_vectornet_object_feature[0, 0, 1:, 0, 0:2]  # [99, 2]
+            tensor_cpu_oneTime_other_pos_start = tensor_oneTime_other_pos_start.cpu()
+            plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
+            plt.xlim(-20, 20)
+            plt.ylim(-20, 20)
+            numpy_oneTime_action_xy = tensor_bag_action_xy[0, 0].cpu().detach().numpy()
+            plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
             plt.pause(0.0000000001)
+
         loss_sum.backward()
         optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
-    plt.cla()
-    plt.plot(list_loss)
-    plt.show()
+    # plt.cla()
+    # plt.plot(list_loss)
+    # plt.show()
 
     print("Finished...")
 
