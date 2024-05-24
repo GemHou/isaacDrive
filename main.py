@@ -293,9 +293,9 @@ def calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_featur
     return tensor_bag_dis_start_withAction
 
 
-class MLP(nn.Module):
+class Agent(nn.Module):
     def __init__(self):
-        super(MLP, self).__init__()
+        super(Agent, self).__init__()
         self.fc1 = nn.Linear(2, 64)  # , dtype=torch.float
         self.fc2 = nn.Linear(64, 2)  # , dtype=torch.float
         self.relu = nn.ReLU()
@@ -308,25 +308,48 @@ class MLP(nn.Module):
         return x
 
 
+class IsaacDriveEnv:
+    def __init__(self):
+        # file name 2 npz
+        list_npz_data = trans_fileName_to_npz()
+
+        # npz 2 numpy
+        (tensor_bag_ego_gt_traj,  # [10, 254, 20, 2]
+         tensor_bag_ego_gt_traj_hist,  # [10, 254, 10, 2]
+         tensor_bag_ego_gt_traj_long,  # [10, 254, 60, 2]
+         self.tensor_bag_vectornet_object_feature,  # [10, 254, 100, 16, 11]
+         tensor_bag_vectornet_object_mask,  # [10, 254, 100, 16]
+         tensor_bag_vectornet_static_feature) = (trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
+
+    def reset(self):
+        tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)],
+                                      device=self.tensor_bag_vectornet_object_feature.device,
+                                      dtype=torch.float)  # [20, 254, 2]
+        return tensor_bag_obs
+
+    def step(self, tensor_bag_action_xy):
+        self.tensor_bag_action_xy = tensor_bag_action_xy
+        # calc dis with action
+        tensor_bag_dis_start_withAction = calc_dis_withAction(self.tensor_bag_action_xy, self.tensor_bag_vectornet_object_feature)
+        return tensor_bag_dis_start_withAction
+
+    def render(self):
+        plt.cla()
+        tensor_oneTime_other_pos_start = self.tensor_bag_vectornet_object_feature[0, 0, 1:, 0, 0:2]  # [99, 2]
+        tensor_cpu_oneTime_other_pos_start = tensor_oneTime_other_pos_start.cpu()
+        plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
+        plt.xlim(-20, 20)
+        plt.ylim(-20, 20)
+        numpy_oneTime_action_xy = self.tensor_bag_action_xy[0, 0].cpu().detach().numpy()
+        plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
+        plt.pause(0.0000000001)
+
+
 def main():
-    # file name 2 npz
-    list_npz_data = trans_fileName_to_npz()
-
-    # npz 2 numpy
-    (tensor_bag_ego_gt_traj,  # [10, 254, 20, 2]
-     tensor_bag_ego_gt_traj_hist,  # [10, 254, 10, 2]
-     tensor_bag_ego_gt_traj_long,  # [10, 254, 60, 2]
-     tensor_bag_vectornet_object_feature,  # [10, 254, 100, 16, 11]
-     tensor_bag_vectornet_object_mask,  # [10, 254, 100, 16]
-     tensor_bag_vectornet_static_feature) = (trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
-
-    # tensor_bag_dis_start = calc_dis(tensor_bag_vectornet_object_feature)
-
-    tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)],
-                                  device=tensor_bag_vectornet_object_feature.device, dtype=torch.float)  # [20, 254, 2]
-    model = MLP()
-    model.to(torch.device("cuda:0"))
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    isaac_drive_env = IsaacDriveEnv()
+    agent = Agent()
+    agent.to(torch.device("cuda:0"))
+    optimizer = optim.Adam(agent.parameters(), lr=0.001)
 
     list_loss = []
 
@@ -335,16 +358,15 @@ def main():
     for epoch in range(2000):
         optimizer.zero_grad()
 
-        # generate action
-        if True:  # model
-            tensor_bag_action_xy = model(tensor_bag_obs)  # [20, 254, 2]
-            # tensor_bag_action_xy = torch.clamp(tensor_bag_action_xy, min=-1, max=1)
-        else:  # random
-            tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2,
-                                               device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
+        tensor_bag_obs = isaac_drive_env.reset()
 
-        # calc dis with action
-        tensor_bag_dis_start_withAction = calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_feature)
+        # generate action
+        if True:  # agent
+            tensor_bag_action_xy = agent(tensor_bag_obs)  # [20, 254, 2]
+        else:  # random
+            tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2, device=torch.device("cuda:0"))  # [20, 254, 2]
+
+        tensor_bag_dis_start_withAction = isaac_drive_env.step(tensor_bag_action_xy)
 
         loss = - tensor_bag_dis_start_withAction
         loss_sum = loss.sum()
@@ -354,16 +376,8 @@ def main():
             # plt.cla()
             # plt.plot(list_loss)
             # plt.pause(0.0000000001)
+            isaac_drive_env.render()
 
-            plt.cla()
-            tensor_oneTime_other_pos_start = tensor_bag_vectornet_object_feature[0, 0, 1:, 0, 0:2]  # [99, 2]
-            tensor_cpu_oneTime_other_pos_start = tensor_oneTime_other_pos_start.cpu()
-            plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
-            plt.xlim(-20, 20)
-            plt.ylim(-20, 20)
-            numpy_oneTime_action_xy = tensor_bag_action_xy[0, 0].cpu().detach().numpy()
-            plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
-            plt.pause(0.0000000001)
 
         loss_sum.backward()
         optimizer.step()
