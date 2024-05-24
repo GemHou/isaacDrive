@@ -1,10 +1,10 @@
 import time
-
-import numpy as np
 import torch
+import random
+import numpy as np
 from matplotlib import pyplot as plt
 
-BATCH_NUM = 5
+BATCH_NUM = 9
 
 
 class IsaacDriveEnv:
@@ -87,10 +87,14 @@ class IsaacDriveEnv:
         self.device = torch.device("cuda:0")
 
     def reset(self):
-        tensor_batch_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(BATCH_NUM)],
+        scene_indexes = list(range(self.all_bag_num))
+        random.shuffle(scene_indexes)
+        selected_scene_indexes = scene_indexes[:BATCH_NUM]
+
+        tensor_batch_obs = torch.tensor([[[selected_scene_indexes[x], y] for y in range(254)] for x in range(BATCH_NUM)],
                                       device=self.device,
                                       dtype=torch.float)  # [20, 254, 2]
-        self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[:BATCH_NUM]  # [20, 254, 100, 2]
+        self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[selected_scene_indexes]  # [5, 254, 100, 2]
         return tensor_batch_obs
 
     def calc_dis(self):
