@@ -1,5 +1,6 @@
 import time
 import torch
+import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
@@ -321,12 +322,17 @@ def main():
 
     # tensor_bag_dis_start = calc_dis(tensor_bag_vectornet_object_feature)
 
-    tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)], device=tensor_bag_vectornet_object_feature.device, dtype=torch.float)  # [20, 254, 2]
+    tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)],
+                                  device=tensor_bag_vectornet_object_feature.device, dtype=torch.float)  # [20, 254, 2]
     model = MLP()
     model.to(torch.device("cuda:0"))
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    for epoch in range(100):
+    list_loss = []
+
+    start_time = time.time()
+
+    for epoch in range(5000):
         optimizer.zero_grad()
 
         # generate action
@@ -334,7 +340,8 @@ def main():
             tensor_bag_action_xy = model(tensor_bag_obs)
             tensor_bag_action_xy = torch.clamp(tensor_bag_action_xy, min=-1, max=1)
         else:  # random
-            tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2, device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
+            tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2,
+                                               device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
 
         # calc dis with action
         tensor_bag_dis_start_withAction = calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_feature)
@@ -342,8 +349,17 @@ def main():
         loss = - tensor_bag_dis_start_withAction
         loss_sum = loss.sum()
         print("loss_sum: ", loss_sum)
+        list_loss.append(loss_sum.item())
+        if epoch % 100 == 0:
+            plt.cla()
+            plt.plot(list_loss)
+            plt.pause(0.0000000001)
         loss_sum.backward()
         optimizer.step()
+    print("update network time: ", time.time() - start_time)  # 15 second
+    plt.cla()
+    plt.plot(list_loss)
+    plt.show()
 
     print("Finished...")
 
