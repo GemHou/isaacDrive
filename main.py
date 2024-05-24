@@ -2,7 +2,7 @@ import time
 import torch
 import numpy as np
 
-BAG_NUM = 10
+BAG_NUM = 20
 
 
 def trans_fileName_to_npz():
@@ -259,21 +259,31 @@ def trans_npz_to_tensor(list_npz_data):
             tensor_bag_vectornet_object_feature, tensor_bag_vectornet_object_mask, tensor_bag_vectornet_static_feature)
 
 
+def calc_dis(tensor_bag_vectornet_object_feature):
+    start_time = time.time()
+    tensor_bag_ego_pos_start = tensor_bag_vectornet_object_feature[:, :, 0, 0, 0:2]
+    assert torch.all(tensor_bag_ego_pos_start == 0)
+    tensor_bag_other_pos_start = tensor_bag_vectornet_object_feature[:, :, 1:, 0, 0:2]
+    print("tensor_bag_other_pos_start.size(): ", tensor_bag_other_pos_start.size())
+    tensor_bag_other_dis_start = torch.norm(tensor_bag_other_pos_start, dim=-1)
+    print("tensor_bag_other_dis_start.size(): ", tensor_bag_other_dis_start.size())
+
+    print("calc dis time per bag (ms)", (time.time() - start_time) * 1000 / BAG_NUM)
+
+
 def main():
     # file name 2 npz
     list_npz_data = trans_fileName_to_npz()
 
     # npz 2 numpy
-    (tensor_bag_ego_gt_traj, tensor_bag_ego_gt_traj_hist, tensor_bag_ego_gt_traj_long,
-     tensor_bag_vectornet_object_feature, tensor_bag_vectornet_object_mask, tensor_bag_vectornet_static_feature) = (
-        trans_npz_to_tensor(list_npz_data))
+    (tensor_bag_ego_gt_traj,  # [10, 254, 20, 2]
+     tensor_bag_ego_gt_traj_hist,  # [10, 254, 10, 2]
+     tensor_bag_ego_gt_traj_long,  # [10, 254, 60, 2]
+     tensor_bag_vectornet_object_feature,  # [10, 254, 100, 16, 11]
+     tensor_bag_vectornet_object_mask,  # [10, 254, 100, 16]
+     tensor_bag_vectornet_static_feature) = (trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-    print(tensor_bag_vectornet_object_feature.size())
-    print(tensor_bag_vectornet_object_mask.size())
-    print(tensor_bag_vectornet_static_feature.size())
-    print(tensor_bag_ego_gt_traj.size())
-    print(tensor_bag_ego_gt_traj_hist.size())
-    print(tensor_bag_ego_gt_traj_long.size())
+    calc_dis(tensor_bag_vectornet_object_feature)
 
     print("Finished...")
 
