@@ -3,8 +3,8 @@ import torch
 import torch.optim as optim
 from matplotlib import pyplot as plt
 
-from agent import Agent
-from isaac_drive_env import IsaacDriveEnv
+from utils_agent import Agent
+from utils_isaac_drive_env import IsaacDriveEnv
 
 
 def main():
