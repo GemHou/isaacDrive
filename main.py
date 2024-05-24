@@ -1,6 +1,7 @@
 import time
 import torch
 import numpy as np
+import torch.nn as nn
 
 BAG_NUM = 20
 
@@ -290,6 +291,22 @@ def calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_featur
     return tensor_bag_dis_start_withAction
 
 
+class MLP(nn.Module):
+    def __init__(self):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(2, 64)  # , dtype=torch.float
+        self.fc2 = nn.Linear(64, 2)  # , dtype=torch.float
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        batch_size, seq_len, feature_size = x.size()
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        # x = x.view(batch_size, seq_len, output_size)  # 将输出tensor恢复为[batch_size, seq_len, output_size]的形状
+        return x
+
+
 def main():
     # file name 2 npz
     list_npz_data = trans_fileName_to_npz()
@@ -304,10 +321,15 @@ def main():
 
     tensor_bag_dis_start = calc_dis(tensor_bag_vectornet_object_feature)
 
-    tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)], device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
+    tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)], device=tensor_bag_vectornet_object_feature.device, dtype=torch.float)  # [20, 254, 2]
+    model = MLP()
+    model.to(torch.device("cuda:0"))
 
-    # generate random action
-    tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2, device=tensor_bag_vectornet_object_feature.device)
+    # generate action
+    if True:  # model
+        tensor_bag_action_xy = model(tensor_bag_obs)  # [20, 254, 2]
+    else:  # random
+        tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2, device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
 
     # calc dis with action
     tensor_bag_dis_start_withAction = calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_feature)
