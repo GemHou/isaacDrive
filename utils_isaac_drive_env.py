@@ -116,21 +116,28 @@ class IsaacDriveEnv:
         tensor_batch_ego_repeat_pos_start = tensor_batch_ego_pos_start.unsqueeze(2)  # [20, 254, 1, 2]
         tensor_batch_ego_repeat_pos_start = tensor_batch_ego_repeat_pos_start.repeat_interleave(99, 2)  # [20, 254, 99, 2]
         tensor_batch_other_pos_start = self.tensor_batch_vectornet_object_feature[:, :, 1:, 0, 0:2]  # [20, 254, 99, 2]
-        tensor_batch_other_dis_start = torch.norm(tensor_batch_other_pos_start - tensor_batch_ego_repeat_pos_start,
-                                                dim=-1)  # [20, 254, 99]
         temp_mask = torch.logical_and(tensor_batch_other_pos_start[:, :, :, 0] != 0,
                                       tensor_batch_other_pos_start[:, :, :, 1] != 0)
-        tensor_batch_other_dis_start = torch.where(temp_mask, tensor_batch_other_dis_start,
-                                                 torch.tensor(999))  # [20, 254, 99]
-        tensor_batch_dis_start_withAction, _ = torch.min(tensor_batch_other_dis_start, dim=-1)  # [20, 254]
 
-        return tensor_batch_dis_start_withAction
+        tensor_batch_other_dis_start_withAction = torch.norm(tensor_batch_other_pos_start - tensor_batch_ego_repeat_pos_start,
+                                                dim=-1)  # [20, 254, 99]
+        tensor_batch_other_dis_start_withAction = torch.where(temp_mask, tensor_batch_other_dis_start_withAction,
+                                                 torch.tensor(999))  # [20, 254, 99]
+        tensor_batch_dis_start_withAction, _ = torch.min(tensor_batch_other_dis_start_withAction, dim=-1)  # [20, 254]
+
+        tensor_batch_other_dis_start_woAction = torch.norm(tensor_batch_other_pos_start,
+                                                dim=-1)  # [20, 254, 99]
+        tensor_batch_other_dis_start_woAction = torch.where(temp_mask, tensor_batch_other_dis_start_woAction,
+                                                 torch.tensor(999))  # [20, 254, 99]
+        tensor_batch_dis_start_woAction, _ = torch.min(tensor_batch_other_dis_start_woAction, dim=-1)  # [20, 254]
+
+        return tensor_batch_dis_start_withAction, tensor_batch_dis_start_woAction
 
     def step(self, tensor_batch_action_xy):
         self.tensor_batch_action_xy = tensor_batch_action_xy
         # calc dis with action
-        tensor_batch_dis_start_withAction = self.calc_dis_withAction()
-        return tensor_batch_dis_start_withAction
+        tensor_batch_dis_start_withAction, tensor_batch_dis_start_woAction = self.calc_dis_withAction()
+        return tensor_batch_dis_start_withAction - tensor_batch_dis_start_woAction
 
     def render(self):
         plt.cla()

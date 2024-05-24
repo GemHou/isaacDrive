@@ -17,7 +17,7 @@ def main():
 
     start_time = time.time()
 
-    for epoch in range(2000):
+    for epoch in range(10000):
         optimizer.zero_grad()
 
         tensor_batch_obs = isaac_drive_env.reset()
@@ -34,8 +34,11 @@ def main():
         loss_sum = loss.sum()
         print("loss_sum: ", loss_sum)
         list_loss.append(loss_sum.item())
-        if epoch % 20 == 0:
-            isaac_drive_env.render()
+        if epoch % 100 == 0:
+            # isaac_drive_env.render()
+            plt.cla()
+            plt.plot(list_loss)
+            plt.pause(0.00000000001)
 
         loss_sum.backward()
         optimizer.step()
