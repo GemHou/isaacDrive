@@ -20,17 +20,17 @@ def main():
     for epoch in range(2000):
         optimizer.zero_grad()
 
-        tensor_bag_obs = isaac_drive_env.reset()
+        tensor_batch_obs = isaac_drive_env.reset()
 
         # generate action
         if True:  # agent
-            tensor_bag_action_xy = agent(tensor_bag_obs)  # [20, 254, 2]
+            tensor_batch_action_xy = agent(tensor_batch_obs)  # [20, 254, 2]
         else:  # random
-            tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2, device=torch.device("cuda:0"))  # [20, 254, 2]
+            tensor_batch_action_xy = torch.randn(BAG_NUM, 254, 2, device=torch.device("cuda:0"))  # [20, 254, 2]
 
-        tensor_bag_dis_start_withAction = isaac_drive_env.step(tensor_bag_action_xy)
+        tensor_batch_dis_start_withAction = isaac_drive_env.step(tensor_batch_action_xy)
 
-        loss = - tensor_bag_dis_start_withAction
+        loss = - tensor_batch_dis_start_withAction
         loss_sum = loss.sum()
         print("loss_sum: ", loss_sum)
         list_loss.append(loss_sum.item())
