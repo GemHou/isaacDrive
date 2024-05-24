@@ -261,12 +261,13 @@ def trans_npz_to_tensor(list_npz_data):
 
 def calc_dis(tensor_bag_vectornet_object_feature):
     start_time = time.time()
-    tensor_bag_ego_pos_start = tensor_bag_vectornet_object_feature[:, :, 0, 0, 0:2]
+    tensor_bag_ego_pos_start = tensor_bag_vectornet_object_feature[:, :, 0, 0, 0:2]  # [20, 254, 2]
     assert torch.all(tensor_bag_ego_pos_start == 0)
-    tensor_bag_other_pos_start = tensor_bag_vectornet_object_feature[:, :, 1:, 0, 0:2]
-    print("tensor_bag_other_pos_start.size(): ", tensor_bag_other_pos_start.size())
-    tensor_bag_other_dis_start = torch.norm(tensor_bag_other_pos_start, dim=-1)
-    print("tensor_bag_other_dis_start.size(): ", tensor_bag_other_dis_start.size())
+    tensor_bag_other_pos_start = tensor_bag_vectornet_object_feature[:, :, 1:, 0, 0:2]  # [20, 254, 99, 2]
+    tensor_bag_other_dis_start = torch.norm(tensor_bag_other_pos_start, dim=-1)  # [20, 254, 99]
+    tensor_bag_other_dis_start = torch.where(tensor_bag_other_dis_start != 0, tensor_bag_other_dis_start,
+                                             torch.tensor(999))  # [20, 254, 99]
+    tensor_bag_dis_start, _ = torch.min(tensor_bag_other_dis_start, dim=-1)  # [20, 254]
 
     print("calc dis time per bag (ms)", (time.time() - start_time) * 1000 / BAG_NUM)
 
@@ -284,6 +285,9 @@ def main():
      tensor_bag_vectornet_static_feature) = (trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
     calc_dis(tensor_bag_vectornet_object_feature)
+
+    # generate random action
+    tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2)
 
     print("Finished...")
 
