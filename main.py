@@ -271,6 +271,24 @@ def calc_dis(tensor_bag_vectornet_object_feature):
 
     print("calc dis time per bag (ms)", (time.time() - start_time) * 1000 / BAG_NUM)
 
+    return tensor_bag_dis_start
+
+
+def calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_feature):
+    tensor_bag_ego_pos_start = tensor_bag_action_xy  # [20, 254, 2]
+    tensor_bag_ego_repeat_pos_start = tensor_bag_ego_pos_start.unsqueeze(2)  # [20, 254, 1, 2]
+    tensor_bag_ego_repeat_pos_start = tensor_bag_ego_repeat_pos_start.repeat_interleave(99, 2)  # [20, 254, 99, 2]
+    tensor_bag_other_pos_start = tensor_bag_vectornet_object_feature[:, :, 1:, 0, 0:2]  # [20, 254, 99, 2]
+    tensor_bag_other_dis_start = torch.norm(tensor_bag_other_pos_start - tensor_bag_ego_repeat_pos_start,
+                                            dim=-1)  # [20, 254, 99]
+    temp_mask = torch.logical_and(tensor_bag_other_pos_start[:, :, :, 0] != 0,
+                                  tensor_bag_other_pos_start[:, :, :, 1] != 0)
+    tensor_bag_other_dis_start = torch.where(temp_mask, tensor_bag_other_dis_start,
+                                             torch.tensor(999))  # [20, 254, 99]
+    tensor_bag_dis_start_withAction, _ = torch.min(tensor_bag_other_dis_start, dim=-1)  # [20, 254]
+
+    return tensor_bag_dis_start_withAction
+
 
 def main():
     # file name 2 npz
@@ -284,10 +302,15 @@ def main():
      tensor_bag_vectornet_object_mask,  # [10, 254, 100, 16]
      tensor_bag_vectornet_static_feature) = (trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-    calc_dis(tensor_bag_vectornet_object_feature)
+    tensor_bag_dis_start = calc_dis(tensor_bag_vectornet_object_feature)
+
+    tensor_bag_obs = torch.tensor([[[x, y] for y in range(254)] for x in range(20)], device=tensor_bag_vectornet_object_feature.device)  # [20, 254, 2]
 
     # generate random action
-    tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2)
+    tensor_bag_action_xy = torch.randn(BAG_NUM, 254, 2, device=tensor_bag_vectornet_object_feature.device)
+
+    # calc dis with action
+    tensor_bag_dis_start_withAction = calc_dis_withAction(tensor_bag_action_xy, tensor_bag_vectornet_object_feature)
 
     print("Finished...")
 
