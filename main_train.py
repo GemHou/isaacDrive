@@ -18,15 +18,16 @@ def main():
     agent.to(DEVICE)
     optimizer = optim.Adam(agent.parameters(), lr=0.001)
 
-    list_loss = []
+    list_float_loss = []
 
     start_time = time.time()
 
     for epoch in tqdm.tqdm(range(2000)):
 
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
+        optimizer.zero_grad()
+        list_tensor_loss = []
         while True:
-            optimizer.zero_grad()
 
             # generate action
             if True:  # agent
@@ -35,28 +36,26 @@ def main():
                 tensor_batch_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
 
             reward, done = isaac_drive_env.step(tensor_batch_action_xy)
-
             loss = - reward
-            loss_sum = loss.mean()
-            # print("loss_sum: ", loss_sum)
-            list_loss.append(loss_sum.item())
-            if RENDER_FLAG and len(list_loss) % 1000 == 0:
-                # isaac_drive_env.render()
-                plt.cla()
-                plt.plot(list_loss)
-                plt.pause(0.05)
-
-            loss_sum.backward()
-            optimizer.step()
-
+            list_tensor_loss.append(loss)
             if done:
                 break
+        loss_epoch = torch.stack(list_tensor_loss)
+        loss_sum = loss_epoch.mean()
+        # print("loss_sum: ", loss_sum)
+        list_float_loss.append(loss_sum.item())
+        if RENDER_FLAG and len(list_float_loss) % 10 == 0:
+            plt.cla()
+            plt.plot(list_float_loss)
+            plt.pause(0.05)
+        loss_sum.backward()
+        optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
 
     torch.save(agent.state_dict(), "./data/interim/state_dict_temp.pt")
 
     plt.cla()
-    plt.plot(list_loss)
+    plt.plot(list_float_loss)
     plt.show()
 
     print("Finished...")
