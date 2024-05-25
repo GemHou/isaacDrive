@@ -142,10 +142,17 @@ class IsaacDriveEnv:
 
     def step(self, tensor_batch_oneTime_action_xy):
         self.timestep += 1
+
         self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
         # calc dis with action
         tensor_batch_oneTime_dis_start_withAction, tensor_batch_oneTime_dis_start_woAction = self.calc_dis_withAction()
-        return tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
+        reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
+
+        if self.timestep >= 254 - 1:
+            done = True
+        else:
+            done = False
+        return reward, done
 
     def render(self):
         plt.cla()
