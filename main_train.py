@@ -9,6 +9,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = False
+BATCH_NUM = 9
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
     for epoch in tqdm.tqdm(range(2000)):
         optimizer.zero_grad()
 
-        tensor_batch_obs = isaac_drive_env.reset()
+        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
 
         # generate action
         if True:  # agent

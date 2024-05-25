@@ -4,7 +4,6 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt
 
-BATCH_NUM = 9
 
 
 class IsaacDriveEnv:
@@ -87,12 +86,13 @@ class IsaacDriveEnv:
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-    def reset(self):
+    def reset(self, batch_num):
+        self.batch_num = batch_num
         scene_indexes = list(range(self.all_bag_num))
         random.shuffle(scene_indexes)
-        selected_scene_indexes = scene_indexes[:BATCH_NUM]
+        selected_scene_indexes = scene_indexes[:self.batch_num]
 
-        tensor_batch_obs = torch.tensor([[[selected_scene_indexes[x], y] for y in range(254)] for x in range(BATCH_NUM)],
+        tensor_batch_obs = torch.tensor([[[selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
                                       device=self.device,
                                       dtype=torch.float)  # [20, 254, 2]
         self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[selected_scene_indexes]  # [5, 254, 100, 2]
@@ -108,7 +108,7 @@ class IsaacDriveEnv:
                                                  torch.tensor(999))  # [20, 254, 99]
         tensor_batch_dis_start, _ = torch.min(tensor_batch_other_dis_start, dim=-1)  # [20, 254]
 
-        print("calc dis time per bag (ms)", (time.time() - start_time) * 1000 / BATCH_NUM)
+        print("calc dis time per bag (ms)", (time.time() - start_time) * 1000 / self.batch_num)
 
         return tensor_batch_dis_start
 
