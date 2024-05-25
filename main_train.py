@@ -36,11 +36,11 @@ def main():
         loss_sum = loss.sum()
         print("loss_sum: ", loss_sum)
         list_loss.append(loss_sum.item())
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             # isaac_drive_env.render()
             plt.cla()
             plt.plot(list_loss)
-            plt.pause(0.00000000001)
+            plt.pause(0.05)
 
         loss_sum.backward()
         optimizer.step()
