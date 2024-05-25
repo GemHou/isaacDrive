@@ -20,5 +20,6 @@ conda install pytorch torchvision torchaudio cpuonly -c pytorch
 
 
 ```bash
-conda install matplotlib
+pip install matplotlib
+pip install tqdm
 ```

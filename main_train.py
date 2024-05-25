@@ -1,4 +1,5 @@
 import time
+import tqdm
 import torch
 import torch.optim as optim
 from matplotlib import pyplot as plt
@@ -7,6 +8,7 @@ from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
+RENDER_FLAG = False
 
 
 def main():
@@ -19,7 +21,7 @@ def main():
 
     start_time = time.time()
 
-    for epoch in range(10000):
+    for epoch in tqdm.tqdm(range(2000)):
         optimizer.zero_grad()
 
         tensor_batch_obs = isaac_drive_env.reset()
@@ -34,9 +36,9 @@ def main():
 
         loss = - tensor_batch_dis_start_withAction
         loss_sum = loss.sum()
-        print("loss_sum: ", loss_sum)
+        # print("loss_sum: ", loss_sum)
         list_loss.append(loss_sum.item())
-        if epoch % 10 == 0:
+        if RENDER_FLAG and epoch % 10 == 0:
             # isaac_drive_env.render()
             plt.cla()
             plt.plot(list_loss)
