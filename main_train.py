@@ -33,9 +33,9 @@ def main():
         else:  # random
             tensor_batch_action_xy = torch.randn(BAG_NUM, 254, 2, device=DEVICE)  # [20, 254, 2]
 
-        tensor_batch_dis_start_withAction = isaac_drive_env.step(tensor_batch_action_xy)
+        reward = isaac_drive_env.step(tensor_batch_action_xy)
 
-        loss = - tensor_batch_dis_start_withAction
+        loss = - reward
         loss_sum = loss.sum()
         # print("loss_sum: ", loss_sum)
         list_loss.append(loss_sum.item())

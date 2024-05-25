@@ -18,6 +18,10 @@ def main():
 
     for _ in range(10):
         isaac_drive_env.reset(batch_num=BATCH_NUM)
+        while True:
+            tensor_batch_oneTime_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [20, 2]
+            reward = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
+            isaac_drive_env.render()
 
     print("Finished")
 
