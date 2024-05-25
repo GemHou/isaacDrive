@@ -101,6 +101,8 @@ class IsaacDriveEnv:
             self.selected_scene_indexes]  # [B, 254, 100, 16, 11]
         self.tensor_batch_ego_gt_traj_hist = self.tensor_all_ego_gt_traj_hist[self.selected_scene_indexes]  # [B, 254, 10, 2]
 
+        self.delta_xy = torch.zeros(self.batch_num, 2, device=self.device)
+
         return tensor_batch_obs
 
     def calc_dis(self):
@@ -146,8 +148,12 @@ class IsaacDriveEnv:
 
         return tensor_batch_oneTime_dis_start_withAction, tensor_batch_oneTime_dis_start_woAction
 
-    def step(self, tensor_batch_oneTime_action_xy):
+    def step(self,
+             tensor_batch_oneTime_action_xy
+             ):
         self.timestep += 1
+
+        self.delta_xy += tensor_batch_oneTime_action_xy
 
         self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
         # calc dis with action
@@ -170,14 +176,17 @@ class IsaacDriveEnv:
         tensor_oneTime_other_pos_his_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, :10, 0:2]
         tensor_cpu_oneTime_other_pos_his_start = tensor_oneTime_other_pos_his_start.cpu()  # [99, 10, 2]
         tensor_cpu_oneTime_other_pos_his_start = tensor_cpu_oneTime_other_pos_his_start.reshape(990, 2)
+        tensor_cpu_oneTime_other_pos_his_start -= self.delta_xy[0].cpu().detach().unsqueeze(0).repeat_interleave(990, dim=0)
         plt.scatter(tensor_cpu_oneTime_other_pos_his_start[:, 0], tensor_cpu_oneTime_other_pos_his_start[:, 1], alpha=0.1)
 
         tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[0, self.timestep]
         tensor_cpu_oneTime_ego_pos_his_start = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
+        tensor_cpu_oneTime_ego_pos_his_start -= self.delta_xy[0].cpu().detach().unsqueeze(0).repeat_interleave(10, dim=0)
         plt.scatter(tensor_cpu_oneTime_ego_pos_his_start[:, 0], tensor_cpu_oneTime_ego_pos_his_start[:, 1], alpha=0.1)
 
         tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
         tensor_cpu_oneTime_other_pos_start = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
+        tensor_cpu_oneTime_other_pos_start -= self.delta_xy[0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
         plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
 
         plt.xlim(-50, 50)
