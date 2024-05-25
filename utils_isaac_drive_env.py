@@ -5,9 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-
 class IsaacDriveEnv:
-
     def trans_fileName_to_npz(self):
         start_time = time.time()
         list_str_path = [
@@ -92,10 +90,12 @@ class IsaacDriveEnv:
         random.shuffle(scene_indexes)
         selected_scene_indexes = scene_indexes[:self.batch_num]
 
-        tensor_batch_obs = torch.tensor([[[selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
-                                      device=self.device,
-                                      dtype=torch.float)  # [20, 254, 2]
-        self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[selected_scene_indexes]  # [5, 254, 100, 2]
+        tensor_batch_obs = torch.tensor(
+            [[[selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
+            device=self.device,
+            dtype=torch.float)  # [20, 254, 2]
+        self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[
+            selected_scene_indexes]  # [5, 254, 100, 2]
         return tensor_batch_obs
 
     def calc_dis(self):
@@ -105,7 +105,7 @@ class IsaacDriveEnv:
         tensor_batch_other_pos_start = self.tensor_batch_vectornet_object_feature[:, :, 1:, 0, 0:2]  # [20, 254, 99, 2]
         tensor_batch_other_dis_start = torch.norm(tensor_batch_other_pos_start, dim=-1)  # [20, 254, 99]
         tensor_batch_other_dis_start = torch.where(tensor_batch_other_dis_start != 0, tensor_batch_other_dis_start,
-                                                 torch.tensor(999))  # [20, 254, 99]
+                                                   torch.tensor(999))  # [20, 254, 99]
         tensor_batch_dis_start, _ = torch.min(tensor_batch_other_dis_start, dim=-1)  # [20, 254]
 
         print("calc dis time per bag (ms)", (time.time() - start_time) * 1000 / self.batch_num)
@@ -115,21 +115,23 @@ class IsaacDriveEnv:
     def calc_dis_withAction(self):
         tensor_batch_ego_pos_start = self.tensor_batch_action_xy  # [20, 254, 2]
         tensor_batch_ego_repeat_pos_start = tensor_batch_ego_pos_start.unsqueeze(2)  # [20, 254, 1, 2]
-        tensor_batch_ego_repeat_pos_start = tensor_batch_ego_repeat_pos_start.repeat_interleave(99, 2)  # [20, 254, 99, 2]
+        tensor_batch_ego_repeat_pos_start = tensor_batch_ego_repeat_pos_start.repeat_interleave(99,
+                                                                                                2)  # [20, 254, 99, 2]
         tensor_batch_other_pos_start = self.tensor_batch_vectornet_object_feature[:, :, 1:, 0, 0:2]  # [20, 254, 99, 2]
         temp_mask = torch.logical_and(tensor_batch_other_pos_start[:, :, :, 0] != 0,
                                       tensor_batch_other_pos_start[:, :, :, 1] != 0)
 
-        tensor_batch_other_dis_start_withAction = torch.norm(tensor_batch_other_pos_start - tensor_batch_ego_repeat_pos_start,
-                                                dim=-1)  # [20, 254, 99]
+        tensor_batch_other_dis_start_withAction = torch.norm(
+            tensor_batch_other_pos_start - tensor_batch_ego_repeat_pos_start,
+            dim=-1)  # [20, 254, 99]
         tensor_batch_other_dis_start_withAction = torch.where(temp_mask, tensor_batch_other_dis_start_withAction,
-                                                 torch.tensor(999))  # [20, 254, 99]
+                                                              torch.tensor(999))  # [20, 254, 99]
         tensor_batch_dis_start_withAction, _ = torch.min(tensor_batch_other_dis_start_withAction, dim=-1)  # [20, 254]
 
         tensor_batch_other_dis_start_woAction = torch.norm(tensor_batch_other_pos_start,
-                                                dim=-1)  # [20, 254, 99]
+                                                           dim=-1)  # [20, 254, 99]
         tensor_batch_other_dis_start_woAction = torch.where(temp_mask, tensor_batch_other_dis_start_woAction,
-                                                 torch.tensor(999))  # [20, 254, 99]
+                                                            torch.tensor(999))  # [20, 254, 99]
         tensor_batch_dis_start_woAction, _ = torch.min(tensor_batch_other_dis_start_woAction, dim=-1)  # [20, 254]
 
         return tensor_batch_dis_start_withAction, tensor_batch_dis_start_woAction
