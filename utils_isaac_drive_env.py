@@ -95,10 +95,8 @@ class IsaacDriveEnv:
         #     device=self.device,
         #     dtype=torch.float)  # [20, 254, 2]
         self.timestep = 0
-        tensor_batch_obs = torch.tensor(
-            [[selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
-            device=self.device,
-            dtype=torch.float)  # [20, 254, 2]
+        tensor_batch_obs = torch.tensor([[selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
+                                        device=self.device, dtype=torch.float)  # [20, 254, 2]
         self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[
             selected_scene_indexes]  # [5, 254, 100, 2]
 
@@ -122,7 +120,7 @@ class IsaacDriveEnv:
         tensor_batch_oneTime_ego_pos_start = self.tensor_batch_oneTime_action_xy  # [20, 2]
         tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_pos_start.unsqueeze(1)  # [20, 1, 2]
         tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_repeat_pos_start.repeat_interleave(99,
-                                                                                                  1)  # [20, 99, 2]
+                                                                                                                1)  # [20, 99, 2]
         tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0,
                                                0:2]  # [20, 99, 2]
         temp_mask = torch.logical_and(tensor_batch_oneTime_other_pos_start[:, :, 0] != 0,
@@ -131,15 +129,19 @@ class IsaacDriveEnv:
         tensor_batch_oneTime_other_dis_start_withAction = torch.norm(
             tensor_batch_oneTime_other_pos_start - tensor_batch_oneTime_ego_repeat_pos_start,
             dim=-1)  # [20, 254, 99]
-        tensor_batch_oneTime_other_dis_start_withAction = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_withAction,
-                                                              torch.tensor(999))  # [20, 254, 99]
-        tensor_batch_oneTime_dis_start_withAction, _ = torch.min(tensor_batch_oneTime_other_dis_start_withAction, dim=-1)  # [20, 254]
+        tensor_batch_oneTime_other_dis_start_withAction = torch.where(temp_mask,
+                                                                      tensor_batch_oneTime_other_dis_start_withAction,
+                                                                      torch.tensor(999))  # [20, 254, 99]
+        tensor_batch_oneTime_dis_start_withAction, _ = torch.min(tensor_batch_oneTime_other_dis_start_withAction,
+                                                                 dim=-1)  # [20, 254]
 
         tensor_batch_oneTime_other_dis_start_woAction = torch.norm(tensor_batch_oneTime_other_pos_start,
-                                                           dim=-1)  # [20, 254, 99]
-        tensor_batch_oneTime_other_dis_start_woAction = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_woAction,
-                                                            torch.tensor(999))  # [20, 254, 99]
-        tensor_batch_oneTime_dis_start_woAction, _ = torch.min(tensor_batch_oneTime_other_dis_start_woAction, dim=-1)  # [20, 254]
+                                                                   dim=-1)  # [20, 254, 99]
+        tensor_batch_oneTime_other_dis_start_woAction = torch.where(temp_mask,
+                                                                    tensor_batch_oneTime_other_dis_start_woAction,
+                                                                    torch.tensor(999))  # [20, 254, 99]
+        tensor_batch_oneTime_dis_start_woAction, _ = torch.min(tensor_batch_oneTime_other_dis_start_woAction,
+                                                               dim=-1)  # [20, 254]
 
         return tensor_batch_oneTime_dis_start_withAction, tensor_batch_oneTime_dis_start_woAction
 
@@ -159,7 +161,8 @@ class IsaacDriveEnv:
 
     def render(self):
         plt.cla()
-        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]  # [99, 2]
+        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0,
+                                         0:2]  # [99, 2]
         tensor_cpu_oneTime_other_pos_start = tensor_oneTime_other_pos_start.cpu()
         plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
         plt.xlim(-50, 50)

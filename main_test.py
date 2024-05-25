@@ -17,9 +17,12 @@ def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
 
     for _ in range(10):
-        isaac_drive_env.reset(batch_num=BATCH_NUM)
+        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
         while True:
-            tensor_batch_oneTime_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [20, 2]
+            if True:  # agent
+                tensor_batch_oneTime_action_xy = agent(tensor_batch_obs)  # [B, 2]
+            else:  # random
+                tensor_batch_oneTime_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
             reward, done = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
             isaac_drive_env.render()
             if done:
