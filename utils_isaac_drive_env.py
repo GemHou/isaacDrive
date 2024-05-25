@@ -120,10 +120,11 @@ class IsaacDriveEnv:
         return tensor_batch_dis_start
 
     def calc_dis_withAction(self):
-        tensor_batch_oneTime_ego_pos_start = self.tensor_batch_oneTime_action_xy  # [20, 2]
-        tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_pos_start.unsqueeze(1)  # [20, 1, 2]
+        # tensor_batch_oneTime_ego_pos_start = self.tensor_batch_oneTime_action_xy  # [B, 2]
+        tensor_batch_oneTime_ego_pos_start = self.delta_xy  # [B, 2]
+        tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_pos_start.unsqueeze(1)  # [B, 1, 2]
         tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_repeat_pos_start.repeat_interleave(99,
-                                                                                                                1)  # [20, 99, 2]
+                                                                                                                1)  # [B, 99, 2]
         tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0,
                                                0:2]  # [20, 99, 2]
         temp_mask = torch.logical_and(tensor_batch_oneTime_other_pos_start[:, :, 0] != 0,
@@ -153,14 +154,15 @@ class IsaacDriveEnv:
              ):
         self.timestep += 1
 
-        self.delta_xy += tensor_batch_oneTime_action_xy
+        self.delta_xy = self.delta_xy.detach() + tensor_batch_oneTime_action_xy
 
         self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
         # calc dis with action
         tensor_batch_oneTime_dis_start_withAction, tensor_batch_oneTime_dis_start_woAction = self.calc_dis_withAction()
-        reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
+        # reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
+        reward = tensor_batch_oneTime_dis_start_withAction
 
-        if self.timestep >= 254 - 1:
+        if self.timestep >= 253 - 1:
             done = True
         else:
             done = False
@@ -189,8 +191,8 @@ class IsaacDriveEnv:
         tensor_cpu_oneTime_other_pos_start -= self.delta_xy[0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
         plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
 
-        plt.xlim(-50, 50)
-        plt.ylim(-50, 50)
+        plt.xlim(-10, 10)
+        plt.ylim(-10, 10)
         numpy_oneTime_action_xy = self.tensor_batch_oneTime_action_xy[0].cpu().detach().numpy()
         plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
         plt.pause(0.1)

@@ -39,7 +39,7 @@ def main():
             loss = - reward
             # list_tensor_loss.append(loss)
             loss_mean = loss.mean()
-            loss_mean.backward()
+            loss_mean.backward(retain_graph=True)
             optimizer.step()
             list_float_loss.append(loss_mean.item())
             if RENDER_FLAG and len(list_float_loss) % 100 == 0:
