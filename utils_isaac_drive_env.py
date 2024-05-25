@@ -34,46 +34,48 @@ class IsaacDriveEnv:
 
     def trans_npz_to_tensor(self, list_npz_data):
         start_time = time.time()
-        tensor_all_vectornet_object_feature = torch.zeros(self.all_bag_num, 254, 100, 16, 11).cuda()
-        tensor_all_vectornet_object_mask = torch.zeros(self.all_bag_num, 254, 100, 16).cuda()
-        tensor_all_vectornet_static_feature = torch.zeros(self.all_bag_num, 254, 80, 16, 6).cuda()
-        tensor_all_ego_gt_traj = torch.zeros(self.all_bag_num, 254, 20, 2).cuda()
-        tensor_all_ego_gt_traj_hist = torch.zeros(self.all_bag_num, 254, 10, 2).cuda()
-        tensor_all_ego_gt_traj_long = torch.zeros(self.all_bag_num, 254, 60, 2).cuda()
+        tensor_all_vectornet_object_feature = torch.zeros(self.all_bag_num, 254, 100, 16, 11).to(self.device)
+        tensor_all_vectornet_object_mask = torch.zeros(self.all_bag_num, 254, 100, 16).to(self.device)
+        tensor_all_vectornet_static_feature = torch.zeros(self.all_bag_num, 254, 80, 16, 6).to(self.device)
+        tensor_all_ego_gt_traj = torch.zeros(self.all_bag_num, 254, 20, 2).to(self.device)
+        tensor_all_ego_gt_traj_hist = torch.zeros(self.all_bag_num, 254, 10, 2).to(self.device)
+        tensor_all_ego_gt_traj_long = torch.zeros(self.all_bag_num, 254, 60, 2).to(self.device)
         for npz_i in range(len(list_npz_data)):
             npz_data = list_npz_data[npz_i]  # 1ms
 
             numpy_vectornet_object_feature = npz_data['vectornet_object_feature']  # 32ms
-            tensor_vectornet_object_feature = torch.from_numpy(numpy_vectornet_object_feature).cuda()  # 1ms
+            tensor_vectornet_object_feature = torch.from_numpy(numpy_vectornet_object_feature).to(self.device)  # 1ms
             npz_timestep = tensor_vectornet_object_feature.size(0)
             tensor_all_vectornet_object_feature[npz_i, :npz_timestep] = tensor_vectornet_object_feature  # 1ms
             tensor_all_vectornet_object_feature[npz_i, :npz_timestep] = tensor_vectornet_object_feature  # 1ms
 
             numpy_vectornet_object_mask = npz_data['vectornet_object_mask']  # 3ms
-            tensor_vectornet_object_mask = torch.from_numpy(numpy_vectornet_object_mask).cuda()  # 3ms
+            tensor_vectornet_object_mask = torch.from_numpy(numpy_vectornet_object_mask).to(self.device)  # 3ms
             tensor_all_vectornet_object_mask[npz_i, :npz_timestep] = tensor_vectornet_object_mask  # 1ms
 
             numpy_vectornet_static_feature = npz_data['vectornet_static_feature']  # 14ms
-            tensor_vectornet_static_feature = torch.from_numpy(numpy_vectornet_static_feature).cuda()  # 5ms
+            tensor_vectornet_static_feature = torch.from_numpy(numpy_vectornet_static_feature).to(self.device)  # 5ms
             tensor_all_vectornet_static_feature[npz_i, :npz_timestep] = tensor_vectornet_static_feature  # 1ms
 
             numpy_ego_gt_traj = npz_data['ego_gt_traj']
-            tensor_ego_gt_traj = torch.from_numpy(numpy_ego_gt_traj).cuda()  # 3ms
+            tensor_ego_gt_traj = torch.from_numpy(numpy_ego_gt_traj).to(self.device)  # 3ms
             tensor_all_ego_gt_traj[npz_i, :npz_timestep] = tensor_ego_gt_traj  # 1ms
 
             numpy_ego_gt_traj_hist = npz_data['ego_gt_traj_hist']
-            tensor_ego_gt_traj_hist = torch.from_numpy(numpy_ego_gt_traj_hist).cuda()  # 2.5ms
+            tensor_ego_gt_traj_hist = torch.from_numpy(numpy_ego_gt_traj_hist).to(self.device)  # 2.5ms
             tensor_all_ego_gt_traj_hist[npz_i, :npz_timestep] = tensor_ego_gt_traj_hist  # 1ms
 
             numpy_ego_gt_traj_long = npz_data['ego_gt_traj_long']
-            tensor_ego_gt_traj_long = torch.from_numpy(numpy_ego_gt_traj_long).cuda()  # 3ms
+            tensor_ego_gt_traj_long = torch.from_numpy(numpy_ego_gt_traj_long).to(self.device)  # 3ms
             tensor_all_ego_gt_traj_long[npz_i, :npz_timestep] = tensor_ego_gt_traj_long  # 1ms
         print("npz 2 tensor time per bag (ms): ", (time.time() - start_time) * 1000 / self.all_bag_num)
         return (tensor_all_ego_gt_traj, tensor_all_ego_gt_traj_hist, tensor_all_ego_gt_traj_long,
                 tensor_all_vectornet_object_feature, tensor_all_vectornet_object_mask,
                 tensor_all_vectornet_static_feature)
 
-    def __init__(self):
+    def __init__(self, device):
+        self.device = device
+
         # file name 2 npz
         list_npz_data = self.trans_fileName_to_npz()
 
@@ -84,7 +86,6 @@ class IsaacDriveEnv:
          self.tensor_all_vectornet_object_feature,  # [10, 254, 100, 16, 11]
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
-        self.device = torch.device("cuda:0")
 
     def reset(self):
         scene_indexes = list(range(self.all_bag_num))

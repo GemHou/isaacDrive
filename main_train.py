@@ -6,11 +6,13 @@ from matplotlib import pyplot as plt
 from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
+DEVICE = torch.device("cpu")  # cuda:0 cpu
+
 
 def main():
-    isaac_drive_env = IsaacDriveEnv()
+    isaac_drive_env = IsaacDriveEnv(device=DEVICE)
     agent = Agent()
-    agent.to(torch.device("cuda:0"))
+    agent.to(DEVICE)
     optimizer = optim.Adam(agent.parameters(), lr=0.001)
 
     list_loss = []
@@ -26,7 +28,7 @@ def main():
         if True:  # agent
             tensor_batch_action_xy = agent(tensor_batch_obs)  # [20, 254, 2]
         else:  # random
-            tensor_batch_action_xy = torch.randn(BAG_NUM, 254, 2, device=torch.device("cuda:0"))  # [20, 254, 2]
+            tensor_batch_action_xy = torch.randn(BAG_NUM, 254, 2, device=DEVICE)  # [20, 254, 2]
 
         tensor_batch_dis_start_withAction = isaac_drive_env.step(tensor_batch_action_xy)
 
