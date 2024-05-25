@@ -9,7 +9,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-BATCH_NUM = 9
+BATCH_NUM = 10
 
 
 def main():
@@ -28,14 +28,13 @@ def main():
         optimizer.zero_grad()
         list_tensor_loss = []
         while True:
-
             # generate action
             if True:  # agent
                 tensor_batch_action_xy = agent(tensor_batch_obs)  # [B, 2]
             else:  # random
                 tensor_batch_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
 
-            reward, done = isaac_drive_env.step(tensor_batch_action_xy)
+            reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_action_xy)
             loss = - reward
             list_tensor_loss.append(loss)
             if done:

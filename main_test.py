@@ -23,7 +23,7 @@ def main():
                 tensor_batch_oneTime_action_xy = agent(tensor_batch_obs)  # [B, 2]
             else:  # random
                 tensor_batch_oneTime_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
-            reward, done = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
+            reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
             isaac_drive_env.render()
             if done:
                 break

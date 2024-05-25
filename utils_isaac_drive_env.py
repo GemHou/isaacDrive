@@ -88,17 +88,17 @@ class IsaacDriveEnv:
         self.batch_num = batch_num
         scene_indexes = list(range(self.all_bag_num))
         random.shuffle(scene_indexes)
-        selected_scene_indexes = scene_indexes[:self.batch_num]
+        self.selected_scene_indexes = scene_indexes[:self.batch_num]
 
         # tensor_batch_obs = torch.tensor(
-        #     [[[selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
+        #     [[[self.selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
         #     device=self.device,
         #     dtype=torch.float)  # [20, 254, 2]
         self.timestep = 0
-        tensor_batch_obs = torch.tensor([[selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
-                                        device=self.device, dtype=torch.float)  # [20, 254, 2]
+        tensor_batch_obs = torch.tensor([[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
+                                        device=self.device, dtype=torch.float)  # [20, 2]
         self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[
-            selected_scene_indexes]  # [5, 254, 100, 2]
+            self.selected_scene_indexes]  # [5, 254, 100, 2]
 
         return tensor_batch_obs
 
@@ -157,7 +157,11 @@ class IsaacDriveEnv:
             done = True
         else:
             done = False
-        return reward, done
+
+        tensor_batch_obs = torch.tensor([[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
+                                        device=self.device, dtype=torch.float)  # [20, 2]
+
+        return reward, done, tensor_batch_obs
 
     def render(self):
         plt.cla()
