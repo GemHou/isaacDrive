@@ -154,13 +154,15 @@ class IsaacDriveEnv:
              ):
         self.timestep += 1
 
-        self.delta_xy = self.delta_xy.detach() + tensor_batch_oneTime_action_xy
+        temp_ego = self.tensor_batch_ego_gt_traj_hist[:, self.timestep, 1] / 2
+
+        self.delta_xy = self.delta_xy.detach() + temp_ego + tensor_batch_oneTime_action_xy
 
         self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
         # calc dis with action
         tensor_batch_oneTime_dis_start_withAction, tensor_batch_oneTime_dis_start_woAction = self.calc_dis_withAction()
         # reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
-        reward = tensor_batch_oneTime_dis_start_withAction
+        reward = - tensor_batch_oneTime_dis_start_withAction
 
         if self.timestep >= 253 - 1:
             done = True
@@ -191,8 +193,10 @@ class IsaacDriveEnv:
         tensor_cpu_oneTime_other_pos_start -= self.delta_xy[0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
         plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
 
-        plt.xlim(-10, 10)
-        plt.ylim(-10, 10)
+        plt.scatter(self.delta_xy[0, 0].detach(), self.delta_xy[0, 1].detach())  # , "yellow"
+
+        plt.xlim(-100, 100)
+        plt.ylim(-100, 100)
         numpy_oneTime_action_xy = self.tensor_batch_oneTime_action_xy[0].cpu().detach().numpy()
         plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
         plt.pause(0.1)

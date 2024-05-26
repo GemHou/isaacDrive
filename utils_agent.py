@@ -13,5 +13,5 @@ class Agent(nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
-        x = torch.tanh(x) * 0.1
+        x = torch.tanh(x) * 1
         return x
