@@ -8,8 +8,8 @@ from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-RENDER_FLAG = True
-BATCH_NUM = 1
+RENDER_FLAG = False
+BATCH_NUM = 10
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
 
     start_time = time.time()
 
-    for epoch in tqdm.tqdm(range(1000)):
+    for epoch in tqdm.tqdm(range(100)):
 
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
         optimizer.zero_grad()
@@ -59,6 +59,9 @@ def main():
         loss_sum.backward()
         optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
+    if not RENDER_FLAG:
+        total_frame = 100 * BATCH_NUM * 253
+        print("throughput: ", total_frame / (time.time() - start_time))
 
     torch.save(agent.state_dict(), "./data/interim/state_dict_temp.pt")
 
