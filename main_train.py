@@ -8,8 +8,8 @@ from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-RENDER_FLAG = False
-BATCH_NUM = 10
+RENDER_FLAG = True
+BATCH_NUM = 1
 
 
 def main():
