@@ -149,17 +149,19 @@ class IsaacDriveEnv:
                                                                 0].cpu().detach().unsqueeze(0).repeat_interleave(99,
                                                                                                                  dim=0)
 
-    def step_main_ego_posHis(self):
-        tensor_oneTime_other_pos_his_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, :10, 0:2]
-        tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_oneTime_other_pos_his_start.cpu()  # [99, 10, 2]
-        tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990, 2)
-        self.tensor_cpu_oneTime_other_pos_his_start_relaStart = tensor_cpu_oneTime_other_pos_his_start_relaEgo + \
-                                                                self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-                                                                    0].cpu().detach().unsqueeze(0).repeat_interleave(
-                                                                    990,
-                                                                    dim=0)
-
     def step_main_other_posHis(self):
+        tensor_oneTime_other_pos_his_start_relaEgo = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, :10, 0:2]  # [99, 10, 2]
+        if False:
+            tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_oneTime_other_pos_his_start_relaEgo.cpu()  # [99, 10, 2]
+            tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990, 2)  # [990, 2]
+            self.tensorCpu_oneTime_other_pos_his_start_relaStart = tensor_cpu_oneTime_other_pos_his_start_relaEgo + \
+                                                                    self.tensor_batch_oneTime_ego_posXYStart_relaStart[0].cpu().detach().unsqueeze(0).repeat_interleave(990, dim=0)
+        else:
+            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart[0].unsqueeze(0).repeat_interleave(99, dim=0).unsqueeze(1).repeat_interleave(10, dim=1)  # [99, 10, 2]
+            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.reshape(990, 2)
+            self.tensorCpu_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.cpu().detach()
+
+    def step_main_ego_posHis(self):
         tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[0, self.timestep]
         tensor_cpu_oneTime_ego_pos_his_start_relaEgo = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
         self.tensor_cpu_oneTime_ego_pos_his_start_relaStart = tensor_cpu_oneTime_ego_pos_his_start_relaEgo + \
@@ -170,14 +172,10 @@ class IsaacDriveEnv:
     def step_main(self, tensor_batch_oneTime_action_xy):
         self.timestep += 1
         self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
-        # calc tensor_batch_oneTime_ego_posXYStart_relaStart 自车位置
-        self.step_main_ego_pos()
-        # calc tensor_cpu_oneTime_other_pos_start_relaStart 周车位置
-        self.step_main_other_pos()
-        # calc tensor_cpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
-        self.step_main_ego_posHis()
-        # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
-        self.step_main_other_posHis()
+        self.step_main_ego_pos()  # calc tensor_batch_oneTime_ego_posXYStart_relaStart 自车位置
+        self.step_main_other_pos()  # calc tensor_cpu_oneTime_other_pos_start_relaStart 周车位置
+        self.step_main_ego_posHis()  # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
+        self.step_main_other_posHis()  # calc tensorCpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
 
     def step(self, tensor_batch_oneTime_action_xy):
         # main step
@@ -206,8 +204,8 @@ class IsaacDriveEnv:
     def render(self):
         plt.cla()
 
-        plt.scatter(self.tensor_cpu_oneTime_other_pos_his_start_relaStart[:, 0],
-                    self.tensor_cpu_oneTime_other_pos_his_start_relaStart[:, 1],
+        plt.scatter(self.tensorCpu_oneTime_other_pos_his_start_relaStart[:, 0],
+                    self.tensorCpu_oneTime_other_pos_his_start_relaStart[:, 1],
                     alpha=0.1, c="orange")  # 周车历史轨迹 Orange=Other
 
         plt.scatter(self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 0],
