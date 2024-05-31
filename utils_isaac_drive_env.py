@@ -167,8 +167,9 @@ class IsaacDriveEnv:
         tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
         tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
         self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
-                                                       self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-                                                           0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
+                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart[
+                                                                0].cpu().detach().unsqueeze(0).repeat_interleave(99,
+                                                                                                                 dim=0)
 
         # calc reward
         # calc dis with action
