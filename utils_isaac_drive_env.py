@@ -165,28 +165,36 @@ class IsaacDriveEnv:
         plt.cla()
 
         tensor_oneTime_other_pos_his_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, :10, 0:2]
-        tensor_cpu_oneTime_other_pos_his_start = tensor_oneTime_other_pos_his_start.cpu()  # [99, 10, 2]
-        tensor_cpu_oneTime_other_pos_his_start = tensor_cpu_oneTime_other_pos_his_start.reshape(990, 2)
-        tensor_cpu_oneTime_other_pos_his_start += self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-            0].cpu().detach().unsqueeze(0).repeat_interleave(990, dim=0)
-        plt.scatter(tensor_cpu_oneTime_other_pos_his_start[:, 0], tensor_cpu_oneTime_other_pos_his_start[:, 1],
+        tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_oneTime_other_pos_his_start.cpu()  # [99, 10, 2]
+        tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990, 2)
+        tensor_cpu_oneTime_other_pos_his_start_relaStart = tensor_cpu_oneTime_other_pos_his_start_relaEgo + \
+                                                           self.tensor_batch_oneTime_ego_posXYStart_relaStart[
+                                                               0].cpu().detach().unsqueeze(0).repeat_interleave(990,
+                                                                                                                dim=0)
+        plt.scatter(tensor_cpu_oneTime_other_pos_his_start_relaStart[:, 0],
+                    tensor_cpu_oneTime_other_pos_his_start_relaStart[:, 1],
                     alpha=0.1)
 
         tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[0, self.timestep]
-        tensor_cpu_oneTime_ego_pos_his_start = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
-        tensor_cpu_oneTime_ego_pos_his_start += self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-            0].cpu().detach().unsqueeze(0).repeat_interleave(10, dim=0)
-        plt.scatter(tensor_cpu_oneTime_ego_pos_his_start[:, 0], tensor_cpu_oneTime_ego_pos_his_start[:, 1], alpha=0.1)
+        tensor_cpu_oneTime_ego_pos_his_start_relaEgo = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
+        tensor_cpu_oneTime_ego_pos_his_start_relaStart = tensor_cpu_oneTime_ego_pos_his_start_relaEgo + \
+                                                         self.tensor_batch_oneTime_ego_posXYStart_relaStart[
+                                                             0].cpu().detach().unsqueeze(0).repeat_interleave(10, dim=0)
+        plt.scatter(tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 0],
+                    tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 1], alpha=0.1)
 
         tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
-        tensor_cpu_oneTime_other_pos_start = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
-        tensor_cpu_oneTime_other_pos_start += self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-            0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
-        plt.scatter(tensor_cpu_oneTime_other_pos_start[:, 0], tensor_cpu_oneTime_other_pos_start[:, 1])
+        tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
+        tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
+                                                       self.tensor_batch_oneTime_ego_posXYStart_relaStart[
+                                                           0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
+        plt.scatter(tensor_cpu_oneTime_other_pos_start_relaStart[:, 0],
+                    tensor_cpu_oneTime_other_pos_start_relaStart[:, 1])
 
         plt.scatter(0, 0)
 
-        plt.scatter(self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 0].detach(), self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 1].detach())  # , "yellow"
+        plt.scatter(self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 0].detach(),
+                    self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 1].detach())  # , "yellow"
 
         plt.xlim(-100, 100)
         plt.ylim(-100, 100)
