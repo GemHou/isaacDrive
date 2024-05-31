@@ -137,17 +137,19 @@ class IsaacDriveEnv:
 
         return tensor_batch_oneTime_dis_start_withAction, tensor_batch_oneTime_dis_start_woAction
 
-    def step(self, tensor_batch_oneTime_action_xy):
-        # main step
-        self.timestep += 1
-
+    def step_main_ego_pos(self):
         tensor_batch_oneTime_ego_deltaPosXYStart = - self.tensor_batch_ego_gt_traj_hist[:, self.timestep, 1] / 2
+        self.tensor_batch_oneTime_ego_posXYStart_relaStart = self.tensor_batch_oneTime_ego_posXYStart_relaStart + tensor_batch_oneTime_ego_deltaPosXYStart
 
-        self.tensor_batch_oneTime_ego_posXYStart_relaStart = self.tensor_batch_oneTime_ego_posXYStart_relaStart + tensor_batch_oneTime_ego_deltaPosXYStart  # + tensor_batch_oneTime_action_xy
+    def step_main_other_pos(self):
+        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
+        tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
+        self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
+                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart[
+                                                                0].cpu().detach().unsqueeze(0).repeat_interleave(99,
+                                                                                                                 dim=0)
 
-        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
-
-        # calc tensor_cpu_oneTime_other_pos_his_start_relaStart
+    def step_main_ego_posHis(self):
         tensor_oneTime_other_pos_his_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, :10, 0:2]
         tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_oneTime_other_pos_his_start.cpu()  # [99, 10, 2]
         tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990, 2)
@@ -156,20 +158,30 @@ class IsaacDriveEnv:
                                                                     0].cpu().detach().unsqueeze(0).repeat_interleave(
                                                                     990,
                                                                     dim=0)
-        # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart
+
+    def step_main_other_posHis(self):
         tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[0, self.timestep]
         tensor_cpu_oneTime_ego_pos_his_start_relaEgo = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
         self.tensor_cpu_oneTime_ego_pos_his_start_relaStart = tensor_cpu_oneTime_ego_pos_his_start_relaEgo + \
                                                               self.tensor_batch_oneTime_ego_posXYStart_relaStart[
                                                                   0].cpu().detach().unsqueeze(0).repeat_interleave(10,
                                                                                                                    dim=0)
-        # calc tensor_cpu_oneTime_other_pos_start_relaStart
-        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
-        tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
-        self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
-                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-                                                                0].cpu().detach().unsqueeze(0).repeat_interleave(99,
-                                                                                                                 dim=0)
+
+    def step_main(self, tensor_batch_oneTime_action_xy):
+        self.timestep += 1
+        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
+        # calc tensor_batch_oneTime_ego_posXYStart_relaStart 自车位置
+        self.step_main_ego_pos()
+        # calc tensor_cpu_oneTime_other_pos_start_relaStart 周车位置
+        self.step_main_other_pos()
+        # calc tensor_cpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
+        self.step_main_ego_posHis()
+        # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
+        self.step_main_other_posHis()
+
+    def step(self, tensor_batch_oneTime_action_xy):
+        # main step
+        self.step_main(tensor_batch_oneTime_action_xy)
 
         # calc reward
         # calc dis with action
