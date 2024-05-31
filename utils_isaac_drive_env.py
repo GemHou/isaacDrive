@@ -173,7 +173,7 @@ class IsaacDriveEnv:
                                                                                                                 dim=0)
         plt.scatter(tensor_cpu_oneTime_other_pos_his_start_relaStart[:, 0],
                     tensor_cpu_oneTime_other_pos_his_start_relaStart[:, 1],
-                    alpha=0.1)
+                    alpha=0.1, c="orange")  # 周车历史轨迹 Orange=Other
 
         tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[0, self.timestep]
         tensor_cpu_oneTime_ego_pos_his_start_relaEgo = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
@@ -181,7 +181,8 @@ class IsaacDriveEnv:
                                                          self.tensor_batch_oneTime_ego_posXYStart_relaStart[
                                                              0].cpu().detach().unsqueeze(0).repeat_interleave(10, dim=0)
         plt.scatter(tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 0],
-                    tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 1], alpha=0.1)
+                    tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 1],
+                    alpha=0.1, c="green")  # 自车历史轨迹 Green=eGo
 
         tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
         tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
@@ -189,12 +190,14 @@ class IsaacDriveEnv:
                                                        self.tensor_batch_oneTime_ego_posXYStart_relaStart[
                                                            0].cpu().detach().unsqueeze(0).repeat_interleave(99, dim=0)
         plt.scatter(tensor_cpu_oneTime_other_pos_start_relaStart[:, 0],
-                    tensor_cpu_oneTime_other_pos_start_relaStart[:, 1])
-
-        plt.scatter(0, 0)
+                    tensor_cpu_oneTime_other_pos_start_relaStart[:, 1],
+                    alpha=0.5, c="orange")  # 周车当前位置 Orange=Other
 
         plt.scatter(self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 0].detach(),
-                    self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 1].detach())  # , "yellow"
+                    self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 1].detach(),
+                    alpha=0.5, c="green")  # 自车当前位置 Green=eGo
+
+        plt.scatter(0, 0, alpha=0.5, c="skyblue")  # 自车起点位置 Skyblue=Start
 
         plt.xlim(-100, 100)
         plt.ylim(-100, 100)
