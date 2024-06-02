@@ -108,12 +108,16 @@ class IsaacDriveEnv:
         return tensor_batch_obs
 
     def calc_dis(self):
-        tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]  # [B, 99, 2]
-        tensor_batch_oneTime_other_dis_start_gt = torch.norm(tensor_batch_oneTime_other_pos_start, dim=-1)  # [B, 254, 99]
+        tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0,
+                                               0:2]  # [B, 99, 2]
+        tensor_batch_oneTime_other_dis_start_gt = torch.norm(tensor_batch_oneTime_other_pos_start,
+                                                             dim=-1)  # [B, 254, 99]
         temp_mask = torch.logical_and(tensor_batch_oneTime_other_pos_start[:, :, 0] != 0,
                                       tensor_batch_oneTime_other_pos_start[:, :, 1] != 0)
-        tensor_batch_oneTime_other_dis_start_gt = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_gt, torch.tensor(999))  # [20, 254, 99]
-        self.tensor_batch_oneTime_dis_start_gt, _ = torch.min(tensor_batch_oneTime_other_dis_start_gt, dim=-1)  # [B, 254]
+        tensor_batch_oneTime_other_dis_start_gt = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_gt,
+                                                              torch.tensor(999))  # [20, 254, 99]
+        self.tensor_batch_oneTime_dis_start_gt, _ = torch.min(tensor_batch_oneTime_other_dis_start_gt,
+                                                              dim=-1)  # [B, 254]
 
         return self.tensor_batch_oneTime_dis_start_gt
 
@@ -125,27 +129,34 @@ class IsaacDriveEnv:
         tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
         tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [B, 99, 2]
         self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
-                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(1).repeat_interleave(99,
-                                                                                                                 dim=1)
+                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(
+                                                                1).repeat_interleave(99,
+                                                                                     dim=1)
 
     def step_main_other_posHis(self):
-        tensor_oneTime_other_pos_his_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, :10, 0:2]  # [B, 99, 10, 2]
+        tensor_oneTime_other_pos_his_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:,
+                                                     :10, 0:2]  # [B, 99, 10, 2]
         if False:
             tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_oneTime_other_pos_his_start_relaEgo.cpu()  # [99, 10, 2]
-            tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990, 2)  # [990, 2]
+            tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990,
+                                                                                                                    2)  # [990, 2]
             self.tensorCpu_oneTime_other_pos_his_start_relaStart = tensor_cpu_oneTime_other_pos_his_start_relaEgo + \
-                                                                    self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(1).repeat_interleave(990, dim=1)
+                                                                   self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(
+                                                                       1).repeat_interleave(990, dim=1)
         else:
-            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart.unsqueeze(1).repeat_interleave(99, dim=1).unsqueeze(2).repeat_interleave(10, dim=2)  # [99, 10, 2]
-            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.reshape(-1, 990, 2)
+            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart.unsqueeze(
+                1).repeat_interleave(99, dim=1).unsqueeze(2).repeat_interleave(10, dim=2)  # [99, 10, 2]
+            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.reshape(-1, 990,
+                                                                                                                2)
             self.tensorCpu_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.cpu().detach()
 
     def step_main_ego_posHis(self):
         tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[:, self.timestep]
         tensor_cpu_oneTime_ego_pos_his_start_relaEgo = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
         self.tensor_cpu_oneTime_ego_pos_his_start_relaStart = tensor_cpu_oneTime_ego_pos_his_start_relaEgo + \
-                                                              self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(1).repeat_interleave(10,
-                                                                                                                   dim=1)
+                                                              self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(
+                                                                  1).repeat_interleave(10,
+                                                                                       dim=1)
 
     def step_main(self, tensor_batch_oneTime_action_xy):
         self.timestep += 1
