@@ -7,7 +7,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 BATCH_NUM = 1
-RENDER_FLAG = False
+RENDER_FLAG = True
 
 
 def prepare_agent():
