@@ -10,7 +10,7 @@ class IsaacDriveEnv:
         start_time = time.time()
         list_str_path = [
             "./data/raw/PL004_event_ddp_expert_event_20230509-162021_0.bag.2ba4e5d23f5007cc82f234b8f0fc1061.npz",
-            # "./data/raw/PL004_event_ddp_expert_event_20230509-192636_0.bag.a844dc03230a81d0e402ba50866b99a6.npz",
+            "./data/raw/PL004_event_ddp_expert_event_20230509-192636_0.bag.a844dc03230a81d0e402ba50866b99a6.npz",
             # "./data/raw/PL004_event_ddp_expert_event_20230509-195031_0.bag.b318970397ad08ed5d9151ad9986a298.npz",
             # "./data/raw/PL004_event_ddp_expert_event_20230509-201217_0.bag.0bbd27a1c38ca54329aec9e3e079552b.npz",
             # "./data/raw/PL004_event_ddp_expert_event_20230510-105631_0.bag.032aa42e53472a3b820a58076af2216d.npz",
@@ -108,31 +108,12 @@ class IsaacDriveEnv:
         return tensor_batch_obs
 
     def calc_dis(self):
-        # tensor_batch_oneTime_ego_pos_start = self.tensor_batch_oneTime_action_xy  # [B, 2]
-        # tensor_batch_oneTime_ego_pos_start = self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
-        # tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_pos_start.unsqueeze(1)  # [B, 1, 2]
-        # tensor_batch_oneTime_ego_repeat_pos_start = tensor_batch_oneTime_ego_repeat_pos_start.repeat_interleave(99, 1)  # [B, 99, 2]
-        tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0,
-                                               0:2]  # [20, 99, 2]
+        tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]  # [B, 99, 2]
+        tensor_batch_oneTime_other_dis_start_gt = torch.norm(tensor_batch_oneTime_other_pos_start, dim=-1)  # [B, 254, 99]
         temp_mask = torch.logical_and(tensor_batch_oneTime_other_pos_start[:, :, 0] != 0,
                                       tensor_batch_oneTime_other_pos_start[:, :, 1] != 0)
-
-        # tensor_batch_oneTime_other_dis_start_withAction = torch.norm(
-        #     tensor_batch_oneTime_other_pos_start - tensor_batch_oneTime_ego_repeat_pos_start,
-        #     dim=-1)  # [20, 254, 99]
-        # tensor_batch_oneTime_other_dis_start_withAction = torch.where(temp_mask,
-        #                                                               tensor_batch_oneTime_other_dis_start_withAction,
-        #                                                               torch.tensor(999))  # [20, 254, 99]
-        # tensor_batch_oneTime_dis_start_withAction, _ = torch.min(tensor_batch_oneTime_other_dis_start_withAction,
-        #                                                          dim=-1)  # [20, 254]
-
-        tensor_batch_oneTime_other_dis_start_gt = torch.norm(tensor_batch_oneTime_other_pos_start,
-                                                                   dim=-1)  # [20, 254, 99]
-        tensor_batch_oneTime_other_dis_start_gt = torch.where(temp_mask,
-                                                                    tensor_batch_oneTime_other_dis_start_gt,
-                                                                    torch.tensor(999))  # [20, 254, 99]
-        self.tensor_batch_oneTime_dis_start_gt, _ = torch.min(tensor_batch_oneTime_other_dis_start_gt,
-                                                               dim=-1)  # [20, 254]
+        tensor_batch_oneTime_other_dis_start_gt = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_gt, torch.tensor(999))  # [20, 254, 99]
+        self.tensor_batch_oneTime_dis_start_gt, _ = torch.min(tensor_batch_oneTime_other_dis_start_gt, dim=-1)  # [B, 254]
 
         return self.tensor_batch_oneTime_dis_start_gt
 
@@ -141,32 +122,30 @@ class IsaacDriveEnv:
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = self.tensor_batch_oneTime_ego_posXYStart_relaStart + tensor_batch_oneTime_ego_deltaPosXYStart
 
     def step_main_other_pos(self):
-        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, 0, 0:2]
-        tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [99, 2]
+        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
+        tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [B, 99, 2]
         self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
-                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-                                                                0].cpu().detach().unsqueeze(0).repeat_interleave(99,
-                                                                                                                 dim=0)
+                                                            self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(1).repeat_interleave(99,
+                                                                                                                 dim=1)
 
     def step_main_other_posHis(self):
-        tensor_oneTime_other_pos_his_start_relaEgo = self.tensor_batch_vectornet_object_feature[0, self.timestep, 1:, :10, 0:2]  # [99, 10, 2]
+        tensor_oneTime_other_pos_his_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, :10, 0:2]  # [B, 99, 10, 2]
         if False:
             tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_oneTime_other_pos_his_start_relaEgo.cpu()  # [99, 10, 2]
             tensor_cpu_oneTime_other_pos_his_start_relaEgo = tensor_cpu_oneTime_other_pos_his_start_relaEgo.reshape(990, 2)  # [990, 2]
             self.tensorCpu_oneTime_other_pos_his_start_relaStart = tensor_cpu_oneTime_other_pos_his_start_relaEgo + \
-                                                                    self.tensor_batch_oneTime_ego_posXYStart_relaStart[0].cpu().detach().unsqueeze(0).repeat_interleave(990, dim=0)
+                                                                    self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(1).repeat_interleave(990, dim=1)
         else:
-            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart[0].unsqueeze(0).repeat_interleave(99, dim=0).unsqueeze(1).repeat_interleave(10, dim=1)  # [99, 10, 2]
-            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.reshape(990, 2)
+            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart.unsqueeze(1).repeat_interleave(99, dim=1).unsqueeze(2).repeat_interleave(10, dim=2)  # [99, 10, 2]
+            tensor_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.reshape(-1, 990, 2)
             self.tensorCpu_oneTime_other_pos_his_start_relaStart = tensor_oneTime_other_pos_his_start_relaStart.cpu().detach()
 
     def step_main_ego_posHis(self):
-        tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[0, self.timestep]
+        tensor_oneTime_ego_pos_his_start = self.tensor_batch_ego_gt_traj_hist[:, self.timestep]
         tensor_cpu_oneTime_ego_pos_his_start_relaEgo = tensor_oneTime_ego_pos_his_start.cpu()  # [10, 2]
         self.tensor_cpu_oneTime_ego_pos_his_start_relaStart = tensor_cpu_oneTime_ego_pos_his_start_relaEgo + \
-                                                              self.tensor_batch_oneTime_ego_posXYStart_relaStart[
-                                                                  0].cpu().detach().unsqueeze(0).repeat_interleave(10,
-                                                                                                                   dim=0)
+                                                              self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(1).repeat_interleave(10,
+                                                                                                                   dim=1)
 
     def step_main(self, tensor_batch_oneTime_action_xy):
         self.timestep += 1
@@ -205,16 +184,16 @@ class IsaacDriveEnv:
 
         plt.cla()
 
-        plt.scatter(self.tensorCpu_oneTime_other_pos_his_start_relaStart[:, 0],
-                    self.tensorCpu_oneTime_other_pos_his_start_relaStart[:, 1],
+        plt.scatter(self.tensorCpu_oneTime_other_pos_his_start_relaStart[0, :, 0],
+                    self.tensorCpu_oneTime_other_pos_his_start_relaStart[0, :, 1],
                     alpha=0.1, c="orange")  # 周车历史轨迹 Orange=Other
 
-        plt.scatter(self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 0],
-                    self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[:, 1],
+        plt.scatter(self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[0, :, 0],
+                    self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[0, :, 1],
                     alpha=0.1, c="green")  # 自车历史轨迹 Green=eGo
 
-        plt.scatter(self.tensor_cpu_oneTime_other_pos_start_relaStart[:, 0],
-                    self.tensor_cpu_oneTime_other_pos_start_relaStart[:, 1],
+        plt.scatter(self.tensor_cpu_oneTime_other_pos_start_relaStart[0, :, 0],
+                    self.tensor_cpu_oneTime_other_pos_start_relaStart[0, :, 1],
                     alpha=0.5, c="orange")  # 周车当前位置 Orange=Other
 
         plt.scatter(self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 0].detach(),
