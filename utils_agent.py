@@ -10,8 +10,8 @@ class Agent(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        x = torch.tanh(x) * 1  # 0.001
-        return x
+        x1 = self.fc1(x)
+        x2 = self.relu(x1)
+        x3 = self.fc2(x2)
+        x4 = torch.tanh(x3)  # 0.001
+        return x4

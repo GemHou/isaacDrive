@@ -7,16 +7,19 @@ from matplotlib import pyplot as plt
 from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
+torch.autograd.set_detect_anomaly(True)
+
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 BATCH_NUM = 1
+BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
 
 
 def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
     agent = Agent(obs_dim=isaac_drive_env.obs_dim)
-    state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
-    agent.load_state_dict(state_dict)
+    # state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
+    # agent.load_state_dict(state_dict)
     agent.to(DEVICE)
     optimizer = optim.Adam(agent.parameters(), lr=0.0001)
 
@@ -27,10 +30,12 @@ def main():
     for epoch in tqdm.tqdm(range(1000)):
 
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
-        optimizer.zero_grad()
-        list_tensor_loss = []
+        if BACKWARD_FREQ == "Epoch":
+            optimizer.zero_grad()
+            list_tensor_loss = []
         while True:
-            # optimizer.zero_grad()
+            if BACKWARD_FREQ == "Step":
+                optimizer.zero_grad()
             # generate action
             if True:  # agent
                 tensor_batch_action_xy = agent(tensor_batch_obs)  # [B, 2]
@@ -39,27 +44,30 @@ def main():
 
             reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_action_xy)
             loss = - reward
-            list_tensor_loss.append(loss)
-            # loss_mean = loss.mean()
-            # loss_mean.backward(retain_graph=True)
-            # optimizer.step()
-            # list_float_loss.append(loss_mean.item())
-            # if RENDER_FLAG and len(list_float_loss) % 100 == 0:
-            #     plt.cla()
-            #     plt.plot(list_float_loss)
-            #     plt.pause(0.05)
+            if BACKWARD_FREQ == "Step":
+                loss_mean = loss.mean()
+                loss_mean.backward(retain_graph=True)
+                optimizer.step()
+                list_float_loss.append(loss_mean.item())
+                if RENDER_FLAG and len(list_float_loss) % 100 == 0:
+                    plt.cla()
+                    plt.plot(list_float_loss)
+                    plt.pause(0.05)
+            if BACKWARD_FREQ == "Epoch":
+                list_tensor_loss.append(loss)
             if done:
                 break
-        loss_epoch = torch.stack(list_tensor_loss)
-        loss_mean = loss_epoch.mean()
-        print("loss_mean: ", loss_mean)
-        list_float_loss.append(loss_mean.item())
-        if RENDER_FLAG and len(list_float_loss) % 10 == 0:
-            plt.cla()
-            plt.plot(list_float_loss)
-            plt.pause(0.05)
-        loss_mean.backward()
-        optimizer.step()
+        if BACKWARD_FREQ == "Epoch":
+            loss_epoch = torch.stack(list_tensor_loss)
+            loss_mean = loss_epoch.mean()
+            print("loss_mean: ", loss_mean)
+            list_float_loss.append(loss_mean.item())
+            if RENDER_FLAG and len(list_float_loss) % 10 == 0:
+                plt.cla()
+                plt.plot(list_float_loss)
+                plt.pause(0.05)
+            loss_mean.backward()
+            optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
     if not RENDER_FLAG:
         total_frame = 100 * BATCH_NUM * 253
