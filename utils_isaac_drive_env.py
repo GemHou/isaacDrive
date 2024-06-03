@@ -109,10 +109,10 @@ class IsaacDriveEnv:
         return tensor_batch_obs
 
     def calc_dis(self):
-        tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
+        self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
 
         # self.tensor_batch_oneTime_other_pos_start_relaEgo  # [B, 99, 2]
-        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(1).repeat_interleave(99, dim=1)
+        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(1).repeat_interleave(99, dim=1)
 
         tensor_batch_oneTime_other_dis_start_relaEgo = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaEgo,dim=-1)  # [B, 99]
         tensor_batch_oneTime_other_dis_start_relaSim = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaSim,dim=-1)  # [B, 99]
@@ -178,12 +178,12 @@ class IsaacDriveEnv:
         # main step
         self.step_main(tensor_batch_oneTime_action_xy)
 
-        # calc reward
+        # calc self.reward
         # calc dis with action
         self.calc_dis()
-        # reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
-        # reward = - tensor_batch_oneTime_dis_start_withAction
-        reward = None
+        # self.reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
+        # self.reward = - tensor_batch_oneTime_dis_start_withAction
+        self.reward = - torch.abs(self.tensor_batch_oneTime_sim_posXYStart_relaEgo)
 
         # calc done
         if self.timestep >= 253 - 1:
@@ -196,10 +196,11 @@ class IsaacDriveEnv:
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [20, 2]
 
-        return reward, done, tensor_batch_obs
+        return self.reward, done, tensor_batch_obs
 
     def render(self):
-        print("self.tensor_batch_oneTime_dis_start_relaEgo[0]: ", self.tensor_batch_oneTime_dis_start_relaEgo[0], "self.tensor_batch_oneTime_dis_start_relaSim[0]: ", self.tensor_batch_oneTime_dis_start_relaSim[0])
+        # print("self.tensor_batch_oneTime_dis_start_relaEgo[0]: ", self.tensor_batch_oneTime_dis_start_relaEgo[0], "self.tensor_batch_oneTime_dis_start_relaSim[0]: ", self.tensor_batch_oneTime_dis_start_relaSim[0])
+        print("self.reward: ", self.reward)
 
         plt.cla()
 

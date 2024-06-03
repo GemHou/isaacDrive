@@ -9,7 +9,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-BATCH_NUM = 1
+BATCH_NUM = 2
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
 
     start_time = time.time()
 
-    for epoch in tqdm.tqdm(range(100)):
+    for epoch in tqdm.tqdm(range(1000)):
 
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
         optimizer.zero_grad()
