@@ -104,12 +104,12 @@ class IsaacDriveEnv:
             self.selected_scene_indexes]  # [B, 254, 10, 2]
 
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)  # [B, 2]
 
         return tensor_batch_obs
 
     def calc_dis(self):
-        tensor_batch_oneTime_sim_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.tensor_batch_oneTime_ego_posXYStart_relaStart.device)  # [B, 2]
-        tensor_batch_oneTime_sim_posXYStart_relaEgo = tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
+        tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
 
         # self.tensor_batch_oneTime_other_pos_start_relaEgo  # [B, 99, 2]
         self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(1).repeat_interleave(99, dim=1)
@@ -167,11 +167,12 @@ class IsaacDriveEnv:
 
     def step_main(self, tensor_batch_oneTime_action_xy):
         self.timestep += 1
-        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
         self.step_main_ego_pos()  # calc tensor_batch_oneTime_ego_posXYStart_relaStart 自车位置
         self.step_main_other_pos()  # calc tensor_cpu_oneTime_other_pos_start_relaStart 周车位置
         self.step_main_ego_posHis()  # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
         self.step_main_other_posHis()  # calc tensorCpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
+        # simulation
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart += tensor_batch_oneTime_action_xy
 
     def step(self, tensor_batch_oneTime_action_xy):
         # main step
@@ -208,7 +209,7 @@ class IsaacDriveEnv:
 
         plt.scatter(self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[0, :, 0],
                     self.tensor_cpu_oneTime_ego_pos_his_start_relaStart[0, :, 1],
-                    alpha=0.1, c="green")  # 自车历史轨迹 Green=eGo
+                    alpha=0.1, c="green")  # 自车gt历史轨迹 Green=eGo
 
         plt.scatter(self.tensor_cpu_oneTime_other_pos_start_relaStart[0, :, 0],
                     self.tensor_cpu_oneTime_other_pos_start_relaStart[0, :, 1],
@@ -216,7 +217,11 @@ class IsaacDriveEnv:
 
         plt.scatter(self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 0].detach(),
                     self.tensor_batch_oneTime_ego_posXYStart_relaStart[0, 1].detach(),
-                    alpha=0.5, c="green")  # 自车当前位置 Green=eGo
+                    alpha=0.5, c="green")  # 自车gt当前位置 Green=eGo
+
+        plt.scatter(self.tensor_batch_oneTime_sim_posXYStart_relaStart[0, 0].detach(),
+                    self.tensor_batch_oneTime_sim_posXYStart_relaStart[0, 1].detach(),
+                    alpha=0.5, c="salmon")  # 自车sim当前位置 Salmon=simulation
 
         plt.scatter(0, 0, alpha=0.5, c="skyblue")  # 自车起点位置 Skyblue=Start
 

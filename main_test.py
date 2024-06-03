@@ -14,15 +14,17 @@ def prepare_agent():
     agent = Agent()
     state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
     agent.load_state_dict(state_dict)
+    return agent
 
 
-def sim_one_epoch(isaac_drive_env):
+def sim_one_epoch(isaac_drive_env, agent, tensor_batch_obs):
     while True:
-        if False:  # agent
+        if True:  # network
             tensor_batch_oneTime_action_xy = agent(tensor_batch_obs)  # [B, 2]
-        else:  # random
+        else:  # rule
             # tensor_batch_oneTime_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
-            tensor_batch_oneTime_action_xy = torch.zeros(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
+            # tensor_batch_oneTime_action_xy = torch.zeros(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
+            tensor_batch_oneTime_action_xy = torch.ones(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
         reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
         # print("reward: ", reward)
         if RENDER_FLAG:
@@ -35,14 +37,14 @@ def main():
     start_time = time.time()
 
     # prepare agent
-    prepare_agent()
+    agent = prepare_agent()
 
     # prepare environment
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
 
     for _ in tqdm.tqdm(range(500)):
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
-        sim_one_epoch(isaac_drive_env)
+        sim_one_epoch(isaac_drive_env, agent, tensor_batch_obs)
 
     print("all time: ", time.time() - start_time)
 
