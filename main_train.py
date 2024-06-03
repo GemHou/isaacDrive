@@ -14,7 +14,9 @@ BATCH_NUM = 1
 
 def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
-    agent = Agent()
+    agent = Agent(obs_dim=isaac_drive_env.obs_dim)
+    state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
+    agent.load_state_dict(state_dict)
     agent.to(DEVICE)
     optimizer = optim.Adam(agent.parameters(), lr=0.0001)
 
@@ -49,14 +51,14 @@ def main():
             if done:
                 break
         loss_epoch = torch.stack(list_tensor_loss)
-        loss_sum = loss_epoch.mean()
-        print("loss_sum: ", loss_sum)
-        list_float_loss.append(loss_sum.item())
+        loss_mean = loss_epoch.mean()
+        print("loss_mean: ", loss_mean)
+        list_float_loss.append(loss_mean.item())
         if RENDER_FLAG and len(list_float_loss) % 10 == 0:
             plt.cla()
             plt.plot(list_float_loss)
             plt.pause(0.05)
-        loss_sum.backward()
+        loss_mean.backward()
         optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
     if not RENDER_FLAG:

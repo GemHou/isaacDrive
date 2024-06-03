@@ -3,9 +3,9 @@ from torch import nn as nn
 
 
 class Agent(nn.Module):
-    def __init__(self):
+    def __init__(self, obs_dim):
         super(Agent, self).__init__()
-        self.fc1 = nn.Linear(2, 64)  # , dtype=torch.float
+        self.fc1 = nn.Linear(obs_dim, 64)  # , dtype=torch.float
         self.fc2 = nn.Linear(64, 2)  # , dtype=torch.float
         self.relu = nn.ReLU()
 
