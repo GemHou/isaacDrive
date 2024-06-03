@@ -108,26 +108,24 @@ class IsaacDriveEnv:
         return tensor_batch_obs
 
     def calc_dis(self):
-        tensor_batch_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0,
-                                               0:2]  # [B, 99, 2]
-        tensor_batch_oneTime_other_dis_start_gt = torch.norm(tensor_batch_oneTime_other_pos_start,
+        tensor_batch_oneTime_other_dis_start_relaEgo = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaEgo,
                                                              dim=-1)  # [B, 254, 99]
-        temp_mask = torch.logical_and(tensor_batch_oneTime_other_pos_start[:, :, 0] != 0,
-                                      tensor_batch_oneTime_other_pos_start[:, :, 1] != 0)
-        tensor_batch_oneTime_other_dis_start_gt = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_gt,
+        temp_mask = torch.logical_and(self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 0] != 0,
+                                      self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 1] != 0)
+        tensor_batch_oneTime_other_dis_start_relaEgo = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_relaEgo,
                                                               torch.tensor(999))  # [20, 254, 99]
-        self.tensor_batch_oneTime_dis_start_gt, _ = torch.min(tensor_batch_oneTime_other_dis_start_gt,
+        self.tensor_batch_oneTime_dis_start_relaEgo, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaEgo,
                                                               dim=-1)  # [B, 254]
 
-        return self.tensor_batch_oneTime_dis_start_gt
+        return self.tensor_batch_oneTime_dis_start_relaEgo
 
     def step_main_ego_pos(self):
         tensor_batch_oneTime_ego_deltaPosXYStart = - self.tensor_batch_ego_gt_traj_hist[:, self.timestep, 1] / 2
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = self.tensor_batch_oneTime_ego_posXYStart_relaStart + tensor_batch_oneTime_ego_deltaPosXYStart
 
     def step_main_other_pos(self):
-        tensor_oneTime_other_pos_start = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
-        tensor_cpu_oneTime_other_pos_start_relaEgo = tensor_oneTime_other_pos_start.cpu()  # [B, 99, 2]
+        self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
+        tensor_cpu_oneTime_other_pos_start_relaEgo = self.tensor_batch_oneTime_other_pos_start_relaEgo.cpu()  # [B, 99, 2]
         self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
                                                             self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(
                                                                 1).repeat_interleave(99,
@@ -191,7 +189,7 @@ class IsaacDriveEnv:
         return reward, done, tensor_batch_obs
 
     def render(self):
-        print("self.tensor_batch_oneTime_dis_start_gt: ", self.tensor_batch_oneTime_dis_start_gt)
+        print("self.tensor_batch_oneTime_dis_start_relaEgo: ", self.tensor_batch_oneTime_dis_start_relaEgo)
 
         plt.cla()
 
