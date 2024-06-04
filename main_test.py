@@ -10,8 +10,8 @@ BATCH_NUM = 1
 RENDER_FLAG = True
 
 
-def prepare_agent():
-    agent = Agent()
+def prepare_agent(obs_dim):
+    agent = Agent(obs_dim=obs_dim)
     state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
     agent.load_state_dict(state_dict)
     return agent
@@ -36,11 +36,11 @@ def sim_one_epoch(isaac_drive_env, agent, tensor_batch_obs):
 def main():
     start_time = time.time()
 
-    # prepare agent
-    agent = prepare_agent()
-
     # prepare environment
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
+
+    # prepare agent
+    agent = prepare_agent(obs_dim=isaac_drive_env.obs_dim)
 
     for _ in tqdm.tqdm(range(500)):
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)

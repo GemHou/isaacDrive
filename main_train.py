@@ -21,13 +21,13 @@ def main():
     # state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
     # agent.load_state_dict(state_dict)
     agent.to(DEVICE)
-    optimizer = optim.Adam(agent.parameters(), lr=0.0001)
+    optimizer = optim.Adam(agent.parameters(), lr=0.001)
 
     list_float_loss = []
 
     start_time = time.time()
 
-    for epoch in tqdm.tqdm(range(1000)):
+    for epoch in tqdm.tqdm(range(500)):
 
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
         if BACKWARD_FREQ == "Epoch":

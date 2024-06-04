@@ -172,25 +172,26 @@ class IsaacDriveEnv:
                                                                   1).repeat_interleave(10,
                                                                                        dim=1)
 
-    def step_main(self, tensor_batch_oneTime_action_xy):
+    def step_main(self):
         self.timestep += 1
         self.step_main_ego_pos()  # calc tensor_batch_oneTime_ego_posXYStart_relaStart 自车位置
         self.step_main_other_pos()  # calc tensor_cpu_oneTime_other_pos_start_relaStart 周车位置
         self.step_main_ego_posHis()  # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
         self.step_main_other_posHis()  # calc tensorCpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
         # simulation
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart += tensor_batch_oneTime_action_xy
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart += self.tensor_batch_oneTime_action_xy
 
     def step(self, tensor_batch_oneTime_action_xy):
         # main step
-        self.step_main(tensor_batch_oneTime_action_xy)
+        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
+        self.step_main()
 
         # calc self.reward
         # calc dis with action
         self.calc_dis()
         # self.reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
         # self.reward = - tensor_batch_oneTime_dis_start_withAction
-        self.reward = - torch.abs(self.tensor_batch_oneTime_sim_posXYStart_relaEgo)
+        self.reward = - torch.square(self.tensor_batch_oneTime_sim_posXYStart_relaEgo)
 
         # calc done
         if self.timestep >= 253 - 1:
@@ -205,7 +206,7 @@ class IsaacDriveEnv:
 
     def render(self):
         # print("self.tensor_batch_oneTime_dis_start_relaEgo[0]: ", self.tensor_batch_oneTime_dis_start_relaEgo[0], "self.tensor_batch_oneTime_dis_start_relaSim[0]: ", self.tensor_batch_oneTime_dis_start_relaSim[0])
-        print("self.reward: ", self.reward)
+        print("self.reward: ", self.reward, "self.tensor_batch_oneTime_action_xy: ", self.tensor_batch_oneTime_action_xy)
 
         plt.cla()
 
