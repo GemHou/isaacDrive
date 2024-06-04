@@ -84,13 +84,15 @@ class IsaacDriveEnv:
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-        self.obs_dim = 4
+        self.obs_dim = 6
 
     def observe_once(self):
         tensor_batch_obs = torch.tensor(
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [B, 2]
-        tensor_batch_obs = torch.cat([tensor_batch_obs, self.tensor_batch_oneTime_sim_posXYStart_relaStart], dim=1)
+        tensor_batch_obs = torch.cat([tensor_batch_obs,
+                                      self.tensor_batch_oneTime_sim_posXYStart_relaStart,
+                                      self.tensor_batch_oneTime_ego_posXYStart_relaStart-self.tensor_batch_oneTime_sim_posXYStart_relaStart], dim=1)
         return tensor_batch_obs.detach()
 
     def reset(self, batch_num):
