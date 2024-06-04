@@ -11,7 +11,7 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-BATCH_NUM = 1
+BATCH_NUM = 10
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
 
 
@@ -23,7 +23,7 @@ def main():
     agent.to(DEVICE)
     if BACKWARD_FREQ == "Epoch":
         lr = 0.001
-        num_epoch = 500
+        num_epoch = 200
     elif BACKWARD_FREQ == "Step":
         lr = 0.00001
         num_epoch = 50
