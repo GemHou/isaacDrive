@@ -12,7 +12,7 @@ torch.autograd.set_detect_anomaly(True)
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 BATCH_NUM = 1
-BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
+BACKWARD_FREQ = "Step"  # "Epoch"  "Step"
 
 
 def main():
@@ -21,13 +21,21 @@ def main():
     # state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
     # agent.load_state_dict(state_dict)
     agent.to(DEVICE)
-    optimizer = optim.Adam(agent.parameters(), lr=0.001)
+    if BACKWARD_FREQ == "Epoch":
+        lr = 0.001
+        num_epoch = 500
+    elif BACKWARD_FREQ == "Step":
+        lr = 0.00001
+        num_epoch = 50
+    else:
+        raise
+    optimizer = optim.Adam(agent.parameters(), lr=lr)
 
     list_float_loss = []
 
     start_time = time.time()
 
-    for epoch in tqdm.tqdm(range(500)):
+    for epoch in tqdm.tqdm(range(num_epoch)):
 
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
         if BACKWARD_FREQ == "Epoch":
@@ -46,6 +54,7 @@ def main():
             loss = - reward
             if BACKWARD_FREQ == "Step":
                 loss_mean = loss.mean()
+                print("loss_mean: ", loss_mean)
                 loss_mean.backward(retain_graph=True)
                 optimizer.step()
                 list_float_loss.append(loss_mean.item())

@@ -91,7 +91,7 @@ class IsaacDriveEnv:
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [B, 2]
         tensor_batch_obs = torch.cat([tensor_batch_obs, self.tensor_batch_oneTime_sim_posXYStart_relaStart], dim=1)
-        return tensor_batch_obs
+        return tensor_batch_obs.detach()
 
     def reset(self, batch_num):
         self.batch_num = batch_num
@@ -179,7 +179,7 @@ class IsaacDriveEnv:
         self.step_main_ego_posHis()  # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
         self.step_main_other_posHis()  # calc tensorCpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
         # simulation
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart += self.tensor_batch_oneTime_action_xy
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaStart.detach() + self.tensor_batch_oneTime_action_xy
 
     def step(self, tensor_batch_oneTime_action_xy):
         # main step
