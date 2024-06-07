@@ -18,12 +18,12 @@ BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
 def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
     agent = Agent(obs_dim=isaac_drive_env.obs_dim)
-    # state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
+    # state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
     # agent.load_state_dict(state_dict)
     agent.to(DEVICE)
     if BACKWARD_FREQ == "Epoch":
         lr = 0.001
-        num_epoch = 200
+        num_epoch = 100
     elif BACKWARD_FREQ == "Step":
         lr = 0.00001
         num_epoch = 50
@@ -82,7 +82,7 @@ def main():
         total_frame = 100 * BATCH_NUM * 253
         print("throughput: ", total_frame / (time.time() - start_time))
 
-    torch.save(agent.state_dict(), "./data/interim/state_dict_temp.pt")
+    torch.save(agent.state_dict(), "./data/interim/state_dict_grag.pt")
 
     plt.cla()
     plt.plot(list_float_loss)

@@ -12,7 +12,7 @@ RENDER_FLAG = True
 
 def prepare_agent(obs_dim):
     agent = Agent(obs_dim=obs_dim)
-    state_dict = torch.load("./data/interim/state_dict_temp.pt", map_location=DEVICE)
+    state_dict = torch.load("data/interim/state_dict_grad.pt", map_location=DEVICE)
     agent.load_state_dict(state_dict)
     return agent
 
