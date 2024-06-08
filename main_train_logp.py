@@ -40,6 +40,12 @@ def main():
     vf_optimizer = Adam(v_net.parameters(), lr=vf_lr)
 
     for epoch in tqdm.tqdm(range(NUM_EPOCH)):
+        list_tensor_batch_obs = []
+        list_tensor_batch_action_xy = []
+        list_tensor_batch_reward = []
+        list_tensor_batch_value = []
+        list_tensor_batch_logp_a = []
+
         tensor_batch_obs = env.reset(batch_num=BATCH_NUM)
         while True:
             tensor_batch_mu = mu_net(tensor_batch_obs)  # [B, 2]
@@ -49,6 +55,15 @@ def main():
             tensor_batch_logp_a = pi.log_prob(tensor_batch_action_xy).sum(axis=-1)
             tensor_batch_value = v_net(tensor_batch_obs)
             tensor_batch_reward, bool_done, tensor_batch_obs_next = env.step(tensor_batch_action_xy)
+
+            list_tensor_batch_obs.append(tensor_batch_obs)
+            list_tensor_batch_action_xy.append(tensor_batch_action_xy)
+            list_tensor_batch_reward.append(tensor_batch_reward)
+            list_tensor_batch_value.append(tensor_batch_value)
+            list_tensor_batch_logp_a.append(tensor_batch_logp_a)
+
+            tensor_batch_obs = tensor_batch_obs_next
+
             if bool_done:
                 break
 
