@@ -3,6 +3,7 @@ import torch
 from torch.optim import Adam
 import gym
 import time
+import tqdm
 import ppo_core as core
 
 
@@ -297,7 +298,9 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
     (o, _), ep_ret, ep_len = env.reset(), 0, 0
 
     # Main loop: collect experience in env and update/log each epoch
-    for epoch in range(epochs):
+    for epoch in tqdm.tqdm(range(epochs)):
+        print("epoch: ", epoch)
+
         for t in range(local_steps_per_epoch):
             a, v, logp = ac.step(torch.as_tensor(o, dtype=torch.float32))
 
@@ -369,7 +372,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', '-s', type=int, default=0)
     parser.add_argument('--cpu', type=int, default=4)
     parser.add_argument('--steps', type=int, default=4000)
-    parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--exp_name', type=str, default='ppo')
     args = parser.parse_args()
 
