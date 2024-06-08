@@ -1,8 +1,10 @@
 import copy
 
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.distributions.categorical import Categorical
+from torch.distributions.normal import Normal
 from torch.optim import Adam
 import numpy as np
 import gym
@@ -19,36 +21,59 @@ def mlp(sizes, activation=nn.Tanh, output_activation=nn.Identity):
 
 
 def train(env_name='CartPole-v0', hidden_sizes=[32], lr=1e-2,
-          epochs=50, batch_size=5000, render=False):
+          epochs=500, batch_size=5000, render=True):
     # make environment, check spaces, get obs / act dims
     env = gym.make(env_name)
     assert isinstance(env.observation_space, Box), \
         "This example only works for envs with continuous state spaces."
-    assert isinstance(env.action_space, Discrete), \
-        "This example only works for envs with discrete action spaces."
+    # assert isinstance(env.action_space, Discrete), \
+    #     "This example only works for envs with discrete action spaces."
 
     obs_dim = env.observation_space.shape[0]
-    n_acts = env.action_space.n
+    if isinstance(env.action_space, Discrete):
+        n_discrete_acts = env.action_space.n
+        # make core of policy network
+        logits_net = mlp(sizes=[obs_dim] + hidden_sizes + [n_discrete_acts])
 
-    # make core of policy network
-    logits_net = mlp(sizes=[obs_dim] + hidden_sizes + [n_acts])
+        # make function to compute action distribution
+        def get_discrete_policy(obs):
+            logits = logits_net(obs)
+            return Categorical(logits=logits)
 
-    # make function to compute action distribution
-    def get_policy(obs):
-        logits = logits_net(obs)
-        return Categorical(logits=logits)
+        get_policy = get_discrete_policy
 
-    # make action selection function (outputs int actions, sampled from policy)
-    def get_action(obs):
-        return get_policy(obs).sample().item()
+        # make action selection function (outputs int actions, sampled from policy)
+        def get_action(obs):
+            return get_policy(obs).sample().item()
+
+        # make optimizer
+        optimizer = Adam(logits_net.parameters(), lr=lr)
+    else:
+        n_continuous_acts = env.action_space.shape[0]
+        # make core of policy network
+        mu_net = mlp(sizes=[obs_dim] + hidden_sizes + [n_continuous_acts])
+        log_std = -0.5 * np.ones(n_continuous_acts, dtype=np.float32)
+        log_std = torch.nn.Parameter(torch.as_tensor(log_std))
+
+        # make function to compute action distribution
+        def get_continuous_policy(obs):
+            mu = mu_net(obs)
+            std = torch.exp(log_std)
+            return Normal(mu, std)
+
+        get_policy = get_continuous_policy
+
+        # make action selection function (outputs int actions, sampled from policy)
+        def get_action(obs):
+            return get_policy(obs).sample().item()
+
+        # make optimizer
+        optimizer = Adam(mu_net.parameters(), lr=lr)
 
     # make loss function whose gradient, for the right data, is policy gradient
     def compute_loss(obs, act, weights):
         logp = get_policy(obs).log_prob(act)
         return -(logp * weights).mean()
-
-    # make optimizer
-    optimizer = Adam(logits_net.parameters(), lr=lr)
 
     # for training policy
     def train_one_epoch():
@@ -63,6 +88,7 @@ def train(env_name='CartPole-v0', hidden_sizes=[32], lr=1e-2,
         obs, _ = env.reset()  # first obs comes from starting distribution
         done = False  # signal from environment that episode is over
         ep_rews = []  # list for rewards accrued throughout ep
+        ep_len = 0
 
         # render first episode of each epoch
         finished_rendering_this_epoch = False
@@ -71,8 +97,10 @@ def train(env_name='CartPole-v0', hidden_sizes=[32], lr=1e-2,
         while True:
 
             # rendering
-            if (not finished_rendering_this_epoch) and render:
+            if render:  # (not finished_rendering_this_epoch) and
                 env.render()
+                # print("render")
+                # plt.pause(0.00000001)
 
             # save obs
             obs_copy = copy.deepcopy(obs)
@@ -81,13 +109,15 @@ def train(env_name='CartPole-v0', hidden_sizes=[32], lr=1e-2,
             # act in the environment
             tensor_obs = torch.as_tensor(obs, dtype=torch.float32)
             act = get_action(tensor_obs)
-            obs, rew, done, _, _ = env.step(act)
+            # print("act: ", act)
+            obs, rew, done, _, _ = env.step([act])
 
             # save action, reward
             batch_acts.append(act)
             ep_rews.append(rew)
+            ep_len += 1
 
-            if done:
+            if done or ep_len > 1000:
                 # if episode is over, record info about episode
                 ep_ret, ep_len = sum(ep_rews), len(ep_rews)
                 batch_rets.append(ep_ret)
@@ -97,7 +127,7 @@ def train(env_name='CartPole-v0', hidden_sizes=[32], lr=1e-2,
                 batch_weights += [ep_ret] * ep_len
 
                 # reset episode-specific variables
-                (obs, _), done, ep_rews = env.reset(), False, []
+                (obs, _), done, ep_rews, ep_len = env.reset(), False, [], 0
 
                 # won't render again this epoch
                 finished_rendering_this_epoch = True
@@ -127,8 +157,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env_name', '--env', type=str, default='CartPole-v0')
-    parser.add_argument('--render', action='store_true')
+    parser.add_argument('--env_name', '--env', type=str, default='Pendulum-v1')  # CartPole-v0
+    parser.add_argument('--render', action='store_true', default=False)
     parser.add_argument('--lr', type=float, default=1e-2)
     args = parser.parse_args()
     print('\nUsing simplest formulation of policy gradient.\n')
