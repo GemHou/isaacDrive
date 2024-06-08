@@ -1,4 +1,6 @@
 import time
+
+import gym
 import torch
 import random
 import numpy as np
@@ -84,7 +86,8 @@ class IsaacDriveEnv:
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-        self.obs_dim = 6
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(6,))
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
     def observe_once(self):
         tensor_batch_obs = torch.tensor(

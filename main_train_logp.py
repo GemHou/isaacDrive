@@ -6,7 +6,10 @@ DEVICE = torch.device("cpu")  # cuda:0 cpu
 
 
 def main():
-    isaac_drive_env = IsaacDriveEnv(device=DEVICE)
+    env = IsaacDriveEnv(device=DEVICE)
+
+    obs_dim = env.observation_space.shape
+    act_dim = env.action_space.shape
 
     print("Finished...")
 

@@ -17,7 +17,8 @@ BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
 
 def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
-    agent = Agent(obs_dim=isaac_drive_env.obs_dim)
+    obs_dim = isaac_drive_env.observation_space.shape[0]
+    agent = Agent(obs_dim=obs_dim)
     # state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
     # agent.load_state_dict(state_dict)
     agent.to(DEVICE)
