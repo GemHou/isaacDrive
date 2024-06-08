@@ -68,7 +68,9 @@ def train(env_name='CartPole-v0', hidden_sizes=[32], lr=1e-2,
             return get_policy(obs).sample().item()
 
         # make optimizer
-        optimizer = Adam(mu_net.parameters(), lr=lr)
+        optimizer = Adam([{'params': mu_net.parameters()},
+                          {'params': log_std},
+                          ], lr=lr)
 
     # make loss function whose gradient, for the right data, is policy gradient
     def compute_loss(obs, act, weights):
