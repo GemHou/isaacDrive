@@ -3,7 +3,7 @@ import torch
 from torch.optim import Adam
 import gym
 import time
-import core as core
+import vpg_core as core
 
 
 # from spinup.utils.logx import EpochLogger
@@ -333,7 +333,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, default='CartPole-v0')
+    parser.add_argument('--env', type=str, default='Pendulum-v1')
     parser.add_argument('--hid', type=int, default=64)
     parser.add_argument('--l', type=int, default=2)
     parser.add_argument('--gamma', type=float, default=0.99)
