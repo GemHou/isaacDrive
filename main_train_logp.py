@@ -8,7 +8,7 @@ from torch.distributions.normal import Normal
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-NUM_EPOCH = 100
+NUM_EPOCH = 1000
 BATCH_NUM = 1
 
 
@@ -90,11 +90,13 @@ def finish_path(list_tensor_batch_action_xy, list_tensor_batch_logp_a, list_tens
                                                                     1:] - tensor_epoch_value[:, :-1]
         tensor_epoch_adv = discount_cumsum(tensor_epoch_deltas, discount=gamma * lam)
         tensor_epoch_ret = discount_cumsum(tensor_epoch_reward, discount=gamma)
+        tensor_epoch_retWoDiscount = torch.sum(tensor_epoch_reward, dim=-1)
+        print("tensor_epoch_retWoDiscountL: ", tensor_epoch_retWoDiscount)
 
         tensor_epoch_obs = torch.stack(list_tensor_batch_obs, dim=1)
         tensor_epoch_action_xy = torch.stack(list_tensor_batch_action_xy, dim=1)
         tensor_epoch_logp_a = torch.stack(list_tensor_batch_logp_a, dim=1)
-    return tensor_epoch_action_xy, tensor_epoch_adv, tensor_epoch_logp_a, tensor_epoch_obs, tensor_epoch_ret
+    return tensor_epoch_action_xy, tensor_epoch_adv, tensor_epoch_logp_a, tensor_epoch_obs, tensor_epoch_ret, tensor_epoch_retWoDiscount
 
 
 def update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch_adv, tensor_epoch_logp_a,
@@ -108,14 +110,19 @@ def update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch
     clip_ratio = 0.2
     tensor_epoch_clip_adv = torch.clamp(tensor_epoch_ratio, 1 - clip_ratio, 1 + clip_ratio) * tensor_epoch_adv
     loss_pi = -(torch.min(tensor_epoch_ratio * tensor_epoch_adv, tensor_epoch_clip_adv)).mean()
+    # print("loss_pi: ", loss_pi)
     loss_pi.backward()
+
+    float_approx_kl = (tensor_epoch_logp_a - tensor_epoch_logp_a_new).mean().item()
     pi_optimizer.step()
+    return float_approx_kl
 
 
 def update_v(tensor_epoch_obs, tensor_epoch_ret, v_net, vf_optimizer):
     vf_optimizer.zero_grad()
     new_v = v_net(tensor_epoch_obs)
     loss_v = ((new_v - tensor_epoch_ret) ** 2).mean()
+    # print("loss_v: ", loss_v)
     loss_v.backward()
     vf_optimizer.step()
 
@@ -154,14 +161,19 @@ def main():
                                                                   log_std, mu_net, tensor_batch_obs, v_net)
 
             if bool_done:
-                tensor_epoch_action_xy, tensor_epoch_adv, tensor_epoch_logp_a, tensor_epoch_obs, tensor_epoch_ret = finish_path(
+                tensor_epoch_action_xy, tensor_epoch_adv, tensor_epoch_logp_a, \
+                    tensor_epoch_obs, tensor_epoch_ret, tensor_epoch_retWoDiscount = finish_path(
                     list_tensor_batch_action_xy, list_tensor_batch_logp_a, list_tensor_batch_obs,
                     list_tensor_batch_reward, list_tensor_batch_value, tensor_batch_obs, v_net)
 
                 train_pi_iters = 80
                 for i in range(train_pi_iters):
-                    update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch_adv,
-                             tensor_epoch_logp_a, tensor_epoch_obs)
+                    float_approx_kl = update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch_adv,
+                                       tensor_epoch_logp_a, tensor_epoch_obs)
+                    target_kl = 0.01
+                    if float_approx_kl > 1.5 * target_kl:
+                        print("early stop at step: ", i)
+                        break
 
                 train_v_iters = 80
                 for i in range(train_v_iters):

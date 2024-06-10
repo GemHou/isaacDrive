@@ -69,7 +69,7 @@ def main():
                 break
         if BACKWARD_FREQ == "Epoch":
             loss_epoch = torch.stack(list_tensor_loss)
-            loss_mean = loss_epoch.mean()
+            loss_mean = loss_epoch.sum()
             print("loss_mean: ", loss_mean)
             list_float_loss.append(loss_mean.item())
             if RENDER_FLAG and len(list_float_loss) % 10 == 0:
