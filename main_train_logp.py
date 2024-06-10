@@ -49,7 +49,7 @@ def discount_cumsum(tensor_epoch_input, discount):
 
 
 def generate_batch_actor(log_std, mu_net, tensor_batch_obs):
-    tensor_batch_mu = mu_net(tensor_batch_obs)  # [B, 2]
+    tensor_batch_mu = mu_net(tensor_batch_obs) * 5  # [B, 2]
     std = torch.exp(log_std)
     batch_pi = Normal(tensor_batch_mu, std)
     tensor_batch_action_xy = batch_pi.sample()
@@ -102,7 +102,7 @@ def finish_path(list_tensor_batch_action_xy, list_tensor_batch_logp_a, list_tens
 def update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch_adv, tensor_epoch_logp_a,
              tensor_epoch_obs):
     pi_optimizer.zero_grad()
-    tensor_epoch_mu = mu_net(tensor_epoch_obs)  # [B, 2]
+    tensor_epoch_mu = mu_net(tensor_epoch_obs) * 5  # [B, 2]
     std = torch.exp(log_std)
     epoch_pi = Normal(tensor_epoch_mu, std)
     tensor_epoch_logp_a_new = epoch_pi.log_prob(tensor_epoch_action_xy).sum(axis=-1)
@@ -133,8 +133,8 @@ def main():
     obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
 
-    mu_net = mlp([obs_dim] + [64, 64] + [act_dim], activation=nn.Tanh)
-    v_net = mlp([obs_dim] + [64, 64] + [1], activation=nn.Tanh)
+    mu_net = mlp([obs_dim] + [64, 64, 64, 64] + [act_dim], activation=nn.Tanh, output_activation=nn.Tanh)
+    v_net = mlp([obs_dim] + [64, 64, 64, 64] + [1], activation=nn.Tanh)
     log_std = -0.5 * np.ones(act_dim, dtype=np.float32)
     log_std = torch.nn.Parameter(torch.as_tensor(log_std))
 

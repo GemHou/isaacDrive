@@ -10,14 +10,15 @@ class Agent(nn.Module):
         self.fc3 = nn.Linear(64, 64)  # , dtype=torch.float
         self.fc4 = nn.Linear(64, 2)  # , dtype=torch.float
         self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
 
     def forward(self, x):
         x = self.fc1(x)
-        x = self.relu(x)
+        x = self.tanh(x)
         x = self.fc2(x)
-        x = self.relu(x)
+        x = self.tanh(x)
         x = self.fc3(x)
-        x = self.relu(x)
+        x = self.tanh(x)
         x = self.fc4(x)
         x = torch.tanh(x) * 5
         return x
