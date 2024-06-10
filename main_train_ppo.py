@@ -1,5 +1,6 @@
 import tqdm
 import torch
+import wandb
 import numpy as np
 import torch.nn as nn
 from torch.optim import Adam
@@ -10,6 +11,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 NUM_EPOCH = 1000
 BATCH_NUM = 1
+RESUME_NAME="ppo_s1b1_20240610"
 
 
 def mlp(sizes, activation, output_activation=nn.Identity):
@@ -128,6 +130,11 @@ def update_v(tensor_epoch_obs, tensor_epoch_ret, v_net, vf_optimizer):
 
 
 def main():
+    wandb.init(
+        project="isaac_drive",
+        resume=RESUME_NAME  # HjScenarioEnv
+    )
+
     env = IsaacDriveEnv(device=DEVICE)
 
     obs_dim = env.observation_space.shape[0]
@@ -165,6 +172,8 @@ def main():
                     tensor_epoch_obs, tensor_epoch_ret, tensor_epoch_retWoDiscount = finish_path(
                     list_tensor_batch_action_xy, list_tensor_batch_logp_a, list_tensor_batch_obs,
                     list_tensor_batch_reward, list_tensor_batch_value, tensor_batch_obs, v_net)
+
+                wandb.log({"return_epoch": tensor_epoch_retWoDiscount.mean().detach()})
 
                 train_pi_iters = 80
                 for i in range(train_pi_iters):
