@@ -35,11 +35,12 @@ def discount_cumsum(tensor_epoch_input, discount):
          x2]
     """
     list_tensor_epoch_output = []
-    for time_i in range(tensor_epoch_input.size(1)):
+    time_length = tensor_epoch_input.size(1)
+    for time_i in range(time_length):
         if time_i == 0:
-            tensor_time_output = tensor_epoch_input[:, 251 - time_i]
+            tensor_time_output = tensor_epoch_input[:, time_length - 1 - time_i]
         else:
-            tensor_time_output = tensor_epoch_input[:, 251 - time_i] + list_tensor_epoch_output[-1] * discount
+            tensor_time_output = tensor_epoch_input[:, time_length - 1 - time_i] + list_tensor_epoch_output[-1] * discount
         list_tensor_epoch_output.append(tensor_time_output)
     list_tensor_epoch_output = list_tensor_epoch_output[::-1]
     tensor_epoch_output = torch.stack(list_tensor_epoch_output, dim=1)
@@ -52,7 +53,7 @@ def generate_batch_actor(log_std, mu_net, tensor_batch_obs):
     batch_pi = Normal(tensor_batch_mu, std)
     tensor_batch_action_xy = batch_pi.sample()
     tensor_batch_logp_a = batch_pi.log_prob(tensor_batch_action_xy).sum(axis=-1)
-    return batch_pi, tensor_batch_action_xy, tensor_batch_logp_a
+    return tensor_batch_action_xy, tensor_batch_logp_a
 
 
 def main():
@@ -83,44 +84,58 @@ def main():
 
         tensor_batch_obs = env.reset(batch_num=BATCH_NUM)
         while True:
-            batch_pi, tensor_batch_action_xy, tensor_batch_logp_a = generate_batch_actor(log_std, mu_net,
-                                                                                         tensor_batch_obs)
-            tensor_batch_value = v_net(tensor_batch_obs)[0]
-            tensor_batch_reward, bool_done, tensor_batch_obs_next = env.step(tensor_batch_action_xy)
+            with torch.no_grad():
+                tensor_batch_action_xy, tensor_batch_logp_a = generate_batch_actor(log_std, mu_net,
+                                                                                             tensor_batch_obs)
+                tensor_batch_value = v_net(tensor_batch_obs)[0]
 
-            list_tensor_batch_obs.append(tensor_batch_obs)
-            list_tensor_batch_action_xy.append(tensor_batch_action_xy)
-            list_tensor_batch_reward.append(tensor_batch_reward)
-            list_tensor_batch_value.append(tensor_batch_value)
-            list_tensor_batch_logp_a.append(tensor_batch_logp_a)
+                tensor_batch_reward, bool_done, tensor_batch_obs_next = env.step(tensor_batch_action_xy)
 
-            tensor_batch_obs = tensor_batch_obs_next
+                list_tensor_batch_obs.append(tensor_batch_obs)
+                list_tensor_batch_action_xy.append(tensor_batch_action_xy)
+                list_tensor_batch_reward.append(tensor_batch_reward)
+                list_tensor_batch_value.append(tensor_batch_value)
+                list_tensor_batch_logp_a.append(tensor_batch_logp_a)
+
+                tensor_batch_obs = tensor_batch_obs_next
 
             if bool_done:
-                tensor_batch_value_final = v_net(tensor_batch_obs)[0]
-                list_tensor_batch_reward.append(tensor_batch_value_final)
-                list_tensor_batch_value.append(tensor_batch_value_final)
+                with torch.no_grad():
+                    tensor_batch_value_final = v_net(tensor_batch_obs)[0]
+                    list_tensor_batch_reward.append(tensor_batch_value_final)
+                    list_tensor_batch_value.append(tensor_batch_value_final)
 
-                tensor_epoch_reward = torch.stack(list_tensor_batch_reward, dim=1)  # [B, T+1]
-                tensor_epoch_value = torch.stack(list_tensor_batch_value, dim=1)  # [B, T+1]
+                    tensor_epoch_reward = torch.stack(list_tensor_batch_reward, dim=1)  # [B, T+1]
+                    tensor_epoch_value = torch.stack(list_tensor_batch_value, dim=1)  # [B, T+1]
 
-                gamma = 0.99
-                lam = 0.97
-                tensor_epoch_deltas = tensor_epoch_reward[:, :-1] + gamma * tensor_epoch_value[:,
-                                                                            1:] - tensor_epoch_value[:, :-1]
-                tensor_epoch_adv = discount_cumsum(tensor_epoch_deltas, discount=gamma * lam)
-                tensor_epoch_ret = discount_cumsum(tensor_epoch_reward, discount=gamma)
+                    gamma = 0.99
+                    lam = 0.97
+                    tensor_epoch_deltas = tensor_epoch_reward[:, :-1] + gamma * tensor_epoch_value[:,
+                                                                                1:] - tensor_epoch_value[:, :-1]
+                    tensor_epoch_adv = discount_cumsum(tensor_epoch_deltas, discount=gamma * lam)
+                    tensor_epoch_ret = discount_cumsum(tensor_epoch_reward, discount=gamma)
 
-                tensor_epoch_obs = torch.stack(list_tensor_batch_obs, dim=1)
-                tensor_epoch_action_xy = torch.stack(list_tensor_batch_action_xy, dim=1)
-                tensor_epoch_logp_a = torch.stack(list_tensor_batch_logp_a, dim=1)
+                    tensor_epoch_obs = torch.stack(list_tensor_batch_obs, dim=1)
+                    tensor_epoch_action_xy = torch.stack(list_tensor_batch_action_xy, dim=1)
+                    tensor_epoch_logp_a = torch.stack(list_tensor_batch_logp_a, dim=1)
 
                 train_pi_iters = 80
                 for i in range(train_pi_iters):
                     pi_optimizer.zero_grad()
-                    epoch_pi, tensor_epoch_action_xy_new, tensor_epoch_logp_a_new = generate_batch_actor(log_std,
-                                                                                                         mu_net,
-                                                                                                         tensor_epoch_obs)
+
+                    tensor_epoch_mu = mu_net(tensor_epoch_obs)  # [B, 2]
+                    std = torch.exp(log_std)
+                    epoch_pi = Normal(tensor_epoch_mu, std)
+                    tensor_epoch_logp_a_new = epoch_pi.log_prob(tensor_epoch_action_xy).sum(axis=-1)
+
+                    tensor_epoch_ratio = torch.exp(tensor_epoch_logp_a_new - tensor_epoch_logp_a)
+                    clip_ratio = 0.2
+                    tensor_epoch_clip_adv = torch.clamp(tensor_epoch_ratio, 1 - clip_ratio, 1 + clip_ratio) * tensor_epoch_adv
+                    loss_pi = -(torch.min(tensor_epoch_ratio * tensor_epoch_adv, tensor_epoch_clip_adv)).mean()
+                    loss_pi.backward()
+                    pi_optimizer.step()
+
+                    print("debug")
 
                 break
 

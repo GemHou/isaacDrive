@@ -201,7 +201,7 @@ class IsaacDriveEnv:
         self.reward = reward_gt + reward_safe
 
         # calc done
-        if self.timestep >= 253 - 1:
+        if self.timestep >= 253 - 1:  # 253 - 1
             done = True
         else:
             done = False
