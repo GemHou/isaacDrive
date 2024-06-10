@@ -1,5 +1,6 @@
 import time
 import tqdm
+import wandb
 import torch
 import torch.optim as optim
 from matplotlib import pyplot as plt
@@ -16,6 +17,11 @@ BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
 
 
 def main():
+    wandb.init(
+        project="isaac_drive",
+        resume="grad_s1b1_20240610"  # HjScenarioEnv
+    )
+
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
     obs_dim = isaac_drive_env.observation_space.shape[0]
     agent = Agent(obs_dim=obs_dim)
@@ -69,8 +75,10 @@ def main():
                 break
         if BACKWARD_FREQ == "Epoch":
             loss_epoch = torch.stack(list_tensor_loss)
-            loss_mean = loss_epoch.sum()
-            print("loss_mean: ", loss_mean)
+            loss_mean = loss_epoch.mean()
+            # print("loss_mean: ", loss_mean)
+            return_epoch = -loss_epoch.sum().item()
+            wandb.log({"return_epoch": return_epoch})
             list_float_loss.append(loss_mean.item())
             if RENDER_FLAG and len(list_float_loss) % 10 == 0:
                 plt.cla()
