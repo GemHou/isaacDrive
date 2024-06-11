@@ -40,7 +40,7 @@ def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
 
     # prepare agent
-    agent = prepare_agent(obs_dim=isaac_drive_env.obs_dim)
+    agent = prepare_agent(obs_dim=isaac_drive_env.observation_space.shape[0])
 
     for _ in tqdm.tqdm(range(500)):
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)

@@ -1,3 +1,4 @@
+import os
 import time
 
 import gym
@@ -7,21 +8,34 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
+def get_file_names(path):
+    file_names = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            file_names.append(os.path.join("./data/raw/data_left/", file))  # root
+    return file_names
+
+
 class IsaacDriveEnv:
     def trans_fileName_to_npz(self):
         start_time = time.time()
-        list_str_path = [
-            "./data/raw/PL004_event_ddp_expert_event_20230509-162021_0.bag.2ba4e5d23f5007cc82f234b8f0fc1061.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230509-192636_0.bag.a844dc03230a81d0e402ba50866b99a6.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230509-195031_0.bag.b318970397ad08ed5d9151ad9986a298.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230509-201217_0.bag.0bbd27a1c38ca54329aec9e3e079552b.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230510-105631_0.bag.032aa42e53472a3b820a58076af2216d.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230510-110036_0.bag.087eef6ce5f40d887acadab8b667890a.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230510-114328_0.bag.dbe5e6d057a8eacc97bc41f5065f200c.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230510-120023_0.bag.dc6adfe75aa8ca27c55619c11d54e41c.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230510-143837_0.bag.adfda910b229b40ff9abdb8428d85a57.npz",
-            "./data/raw/PL004_event_ddp_expert_event_20230510-144653_0.bag.eb352e856a29fc7b20f17737779e11b1.npz",
-        ]
+        if True:
+            list_str_path = [
+                "./data/raw/PL004_event_ddp_expert_event_20230509-162021_0.bag.2ba4e5d23f5007cc82f234b8f0fc1061.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230509-192636_0.bag.a844dc03230a81d0e402ba50866b99a6.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230509-195031_0.bag.b318970397ad08ed5d9151ad9986a298.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230509-201217_0.bag.0bbd27a1c38ca54329aec9e3e079552b.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230510-105631_0.bag.032aa42e53472a3b820a58076af2216d.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230510-110036_0.bag.087eef6ce5f40d887acadab8b667890a.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230510-114328_0.bag.dbe5e6d057a8eacc97bc41f5065f200c.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230510-120023_0.bag.dc6adfe75aa8ca27c55619c11d54e41c.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230510-143837_0.bag.adfda910b229b40ff9abdb8428d85a57.npz",
+                "./data/raw/PL004_event_ddp_expert_event_20230510-144653_0.bag.eb352e856a29fc7b20f17737779e11b1.npz",
+            ]
+        else:
+            list_str_path = get_file_names("data/raw/data_left")
+        print("len(list_str_path): ", len(list_str_path))
+
         # list_str_path = list_str_path[:BAG_NUM]
         self.all_bag_num = len(list_str_path)
         list_npz_data = []
@@ -95,7 +109,8 @@ class IsaacDriveEnv:
             device=self.device, dtype=torch.float)  # [B, 2]
         tensor_batch_obs = torch.cat([tensor_batch_obs,
                                       self.tensor_batch_oneTime_sim_posXYStart_relaStart,
-                                      self.tensor_batch_oneTime_ego_posXYStart_relaStart-self.tensor_batch_oneTime_sim_posXYStart_relaStart], dim=1)
+                                      self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart],
+                                     dim=1)
         return tensor_batch_obs.detach()
 
     def reset(self, batch_num):
@@ -109,7 +124,8 @@ class IsaacDriveEnv:
             self.selected_scene_indexes]  # [B, 254, 10, 2]
 
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)  # [B, 2]
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = torch.zeros(self.batch_num, 2,
+                                                                         device=self.device)  # [B, 2]
 
         # tensor_batch_obs = torch.tensor(
         #     [[[self.selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
@@ -124,28 +140,39 @@ class IsaacDriveEnv:
         self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
 
         # self.tensor_batch_oneTime_other_pos_start_relaEgo  # [B, 99, 2]
-        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(1).repeat_interleave(99, dim=1)
+        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(
+            1).repeat_interleave(99, dim=1)
 
-        tensor_batch_oneTime_other_dis_start_relaEgo = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaEgo,dim=-1)  # [B, 99]
-        tensor_batch_oneTime_other_dis_start_relaSim = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaSim,dim=-1)  # [B, 99]
+        tensor_batch_oneTime_other_dis_start_relaEgo = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaEgo,
+                                                                  dim=-1)  # [B, 99]
+        tensor_batch_oneTime_other_dis_start_relaSim = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaSim,
+                                                                  dim=-1)  # [B, 99]
 
         temp_mask = torch.logical_and(self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 0] != 0,
                                       self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 1] != 0)
 
-        tensor_batch_oneTime_other_dis_start_relaEgo = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_relaEgo,torch.tensor(999))  # [20, 99]
-        tensor_batch_oneTime_other_dis_start_relaSim = torch.where(temp_mask, tensor_batch_oneTime_other_dis_start_relaSim,torch.tensor(999))  # [20, 99]
+        tensor_batch_oneTime_other_dis_start_relaEgo = torch.where(temp_mask,
+                                                                   tensor_batch_oneTime_other_dis_start_relaEgo,
+                                                                   torch.tensor(999))  # [20, 99]
+        tensor_batch_oneTime_other_dis_start_relaSim = torch.where(temp_mask,
+                                                                   tensor_batch_oneTime_other_dis_start_relaSim,
+                                                                   torch.tensor(999))  # [20, 99]
 
-        self.tensor_batch_oneTime_dis_start_relaEgo, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaEgo, dim=-1)  # [B]
-        self.tensor_batch_oneTime_dis_start_relaSim, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaSim, dim=-1)  # [B]
+        self.tensor_batch_oneTime_dis_start_relaEgo, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaEgo,
+                                                                   dim=-1)  # [B]
+        self.tensor_batch_oneTime_dis_start_relaSim, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaSim,
+                                                                   dim=-1)  # [B]
 
         return self.tensor_batch_oneTime_dis_start_relaEgo, self.tensor_batch_oneTime_dis_start_relaSim
 
     def step_main_ego_pos(self):
-        tensor_batch_oneTime_ego_deltaPosXYStart = - self.tensor_batch_ego_gt_traj_hist[:, self.timestep, 1] / 2  # [B, 2]
+        tensor_batch_oneTime_ego_deltaPosXYStart = - self.tensor_batch_ego_gt_traj_hist[:, self.timestep,
+                                                     1] / 2  # [B, 2]
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = self.tensor_batch_oneTime_ego_posXYStart_relaStart + tensor_batch_oneTime_ego_deltaPosXYStart  # [B, 2]
 
     def step_main_other_pos(self):
-        self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
+        self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep,
+                                                            1:, 0, 0:2]
         tensor_cpu_oneTime_other_pos_start_relaEgo = self.tensor_batch_oneTime_other_pos_start_relaEgo.cpu()  # [B, 99, 2]
         self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
                                                             self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(
@@ -213,7 +240,8 @@ class IsaacDriveEnv:
 
     def render(self):
         # print("self.tensor_batch_oneTime_dis_start_relaEgo[0]: ", self.tensor_batch_oneTime_dis_start_relaEgo[0], "self.tensor_batch_oneTime_dis_start_relaSim[0]: ", self.tensor_batch_oneTime_dis_start_relaSim[0])
-        print("self.reward: ", self.reward, "self.tensor_batch_oneTime_action_xy: ", self.tensor_batch_oneTime_action_xy)
+        # print("self.reward: ", self.reward, "self.tensor_batch_oneTime_action_xy: ",
+        #       self.tensor_batch_oneTime_action_xy)
 
         plt.cla()
 

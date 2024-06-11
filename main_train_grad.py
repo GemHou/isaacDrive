@@ -91,7 +91,7 @@ def main():
         total_frame = 100 * BATCH_NUM * 253
         print("throughput: ", total_frame / (time.time() - start_time))
 
-    torch.save(agent.state_dict(), "./data/interim/state_dict_grag.pt")
+    torch.save(agent.state_dict(), "./data/interim/state_dict_grad.pt")
 
     plt.cla()
     plt.plot(list_float_loss)
