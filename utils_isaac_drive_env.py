@@ -12,14 +12,14 @@ def get_file_names(path):
     file_names = []
     for root, dirs, files in os.walk(path):
         for file in files:
-            file_names.append(os.path.join("./data/raw/data_left/", file))  # root
+            file_names.append(os.path.join(path, file))  # root
     return file_names
 
 
 class IsaacDriveEnv:
     def trans_fileName_to_npz(self):
         start_time = time.time()
-        if True:
+        if False:
             list_str_path = [
                 "./data/raw/PL004_event_ddp_expert_event_20230509-162021_0.bag.2ba4e5d23f5007cc82f234b8f0fc1061.npz",
                 "./data/raw/PL004_event_ddp_expert_event_20230509-192636_0.bag.a844dc03230a81d0e402ba50866b99a6.npz",
@@ -33,14 +33,15 @@ class IsaacDriveEnv:
                 "./data/raw/PL004_event_ddp_expert_event_20230510-144653_0.bag.eb352e856a29fc7b20f17737779e11b1.npz",
             ]
         else:
-            list_str_path = get_file_names("data/raw/data_left")
+            list_str_path = get_file_names("data/raw/data_left_100/")
         print("len(list_str_path): ", len(list_str_path))
 
         # list_str_path = list_str_path[:BAG_NUM]
         self.all_bag_num = len(list_str_path)
         list_npz_data = []
         for str_path in list_str_path:
-            npz_data = np.load(str_path, allow_pickle=False)
+            print("str_path: ", str_path)
+            npz_data = np.load(str_path, allow_pickle=True)
             list_npz_data.append(npz_data)
         print("file name 2 npz time per bag (ms): ", (time.time() - start_time) * 1000 / self.all_bag_num)
         return list_npz_data
