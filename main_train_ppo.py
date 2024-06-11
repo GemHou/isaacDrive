@@ -10,8 +10,8 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 NUM_EPOCH = 1000
-BATCH_NUM = 1
-RESUME_NAME="ppo_s1b1_20240610"
+BATCH_NUM = 10
+RESUME_NAME="ppo_s10b10_20240610-2"
 
 
 def mlp(sizes, activation, output_activation=nn.Identity):
@@ -65,7 +65,7 @@ def collect_experience_step(env, list_tensor_batch_action_xy, list_tensor_batch_
     with torch.no_grad():
         tensor_batch_action_xy, tensor_batch_logp_a = generate_batch_actor(log_std, mu_net,
                                                                            tensor_batch_obs)
-        tensor_batch_value = v_net(tensor_batch_obs)[0]
+        tensor_batch_value = v_net(tensor_batch_obs)[:, 0]
         tensor_batch_reward, bool_done, tensor_batch_obs_next = env.step(tensor_batch_action_xy)
         list_tensor_batch_obs.append(tensor_batch_obs)
         list_tensor_batch_action_xy.append(tensor_batch_action_xy)
@@ -79,7 +79,7 @@ def collect_experience_step(env, list_tensor_batch_action_xy, list_tensor_batch_
 def finish_path(list_tensor_batch_action_xy, list_tensor_batch_logp_a, list_tensor_batch_obs, list_tensor_batch_reward,
                 list_tensor_batch_value, tensor_batch_obs, v_net):
     with torch.no_grad():
-        tensor_batch_value_final = v_net(tensor_batch_obs)[0]
+        tensor_batch_value_final = v_net(tensor_batch_obs)[:, 0]
         list_tensor_batch_reward.append(tensor_batch_value_final)
         list_tensor_batch_value.append(tensor_batch_value_final)
 
@@ -93,7 +93,7 @@ def finish_path(list_tensor_batch_action_xy, list_tensor_batch_logp_a, list_tens
         tensor_epoch_adv = discount_cumsum(tensor_epoch_deltas, discount=gamma * lam)
         tensor_epoch_ret = discount_cumsum(tensor_epoch_reward, discount=gamma)
         tensor_epoch_retWoDiscount = torch.sum(tensor_epoch_reward, dim=-1)
-        print("tensor_epoch_retWoDiscountL: ", tensor_epoch_retWoDiscount)
+        # print("tensor_epoch_retWoDiscountL: ", tensor_epoch_retWoDiscount)
 
         tensor_epoch_obs = torch.stack(list_tensor_batch_obs, dim=1)
         tensor_epoch_action_xy = torch.stack(list_tensor_batch_action_xy, dim=1)
@@ -122,8 +122,8 @@ def update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch
 
 def update_v(tensor_epoch_obs, tensor_epoch_ret, v_net, vf_optimizer):
     vf_optimizer.zero_grad()
-    new_v = v_net(tensor_epoch_obs)
-    loss_v = ((new_v - tensor_epoch_ret) ** 2).mean()
+    new_v = v_net(tensor_epoch_obs)[:, :, 0]
+    loss_v = ((new_v - tensor_epoch_ret[:, :-1]) ** 2).mean()
     # print("loss_v: ", loss_v)
     loss_v.backward()
     vf_optimizer.step()

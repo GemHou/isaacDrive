@@ -12,14 +12,15 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-BATCH_NUM = 1
+BATCH_NUM = 10
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
+RESUME_NAME = "grad_s10b10_2024061017"
 
 
 def main():
     wandb.init(
         project="isaac_drive",
-        resume="grad_s1b1_20240610"  # HjScenarioEnv
+        resume=RESUME_NAME  # HjScenarioEnv
     )
 
     isaac_drive_env = IsaacDriveEnv(device=DEVICE)
@@ -47,7 +48,7 @@ def main():
         tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
         if BACKWARD_FREQ == "Epoch":
             optimizer.zero_grad()
-            list_tensor_loss = []
+            list_tensor_time_loss = []
         while True:
             if BACKWARD_FREQ == "Step":
                 optimizer.zero_grad()
@@ -58,9 +59,9 @@ def main():
                 tensor_batch_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
 
             reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_action_xy)
-            loss = - reward
+            tensor_time_loss = - reward
             if BACKWARD_FREQ == "Step":
-                loss_mean = loss.mean()
+                loss_mean = tensor_time_loss.mean()
                 print("loss_mean: ", loss_mean)
                 loss_mean.backward(retain_graph=True)
                 optimizer.step()
@@ -70,21 +71,20 @@ def main():
                     plt.plot(list_float_loss)
                     plt.pause(0.05)
             if BACKWARD_FREQ == "Epoch":
-                list_tensor_loss.append(loss)
+                list_tensor_time_loss.append(tensor_time_loss)
             if done:
                 break
         if BACKWARD_FREQ == "Epoch":
-            loss_epoch = torch.stack(list_tensor_loss)
-            loss_mean = loss_epoch.mean()
-            # print("loss_mean: ", loss_mean)
-            return_epoch = -loss_epoch.sum().item()
+            tensor_epoch_loss = torch.stack(list_tensor_time_loss, dim=1)
+            loss_final = tensor_epoch_loss.sum(dim=-1).mean()
+            return_epoch = -loss_final.item()
             wandb.log({"return_epoch": return_epoch})
-            list_float_loss.append(loss_mean.item())
+            list_float_loss.append(loss_final.item())
             if RENDER_FLAG and len(list_float_loss) % 10 == 0:
                 plt.cla()
                 plt.plot(list_float_loss)
                 plt.pause(0.05)
-            loss_mean.backward()
+            loss_final.backward()
             optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
     if not RENDER_FLAG:
