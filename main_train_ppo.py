@@ -11,7 +11,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 NUM_EPOCH = 1000
 BATCH_NUM = 100
-RESUME_NAME="ppo_s100b100_20240611"
+RESUME_NAME = "ppo_s100b100_20240611"
 
 
 def mlp(sizes, activation, output_activation=nn.Identity):
@@ -178,7 +178,7 @@ def main():
                 train_pi_iters = 80
                 for i in range(train_pi_iters):
                     float_approx_kl = update_p(log_std, mu_net, pi_optimizer, tensor_epoch_action_xy, tensor_epoch_adv,
-                                       tensor_epoch_logp_a, tensor_epoch_obs)
+                                               tensor_epoch_logp_a, tensor_epoch_obs)
                     target_kl = 0.01
                     if float_approx_kl > 1.5 * target_kl:
                         print("early stop at step: ", i)

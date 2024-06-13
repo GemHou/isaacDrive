@@ -108,9 +108,10 @@ class IsaacDriveEnv:
         tensor_batch_obs = torch.tensor(
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [B, 2]
-        tensor_batch_obs = torch.cat([tensor_batch_obs,
-                                      self.tensor_batch_oneTime_sim_posXYStart_relaStart,
-                                      self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart],
+        tensor_batch_obs = torch.cat([tensor_batch_obs,  # 2
+                                      self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # 2
+                                      self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart  # 2
+                                      ],
                                      dim=1)
         return tensor_batch_obs.detach()
 
@@ -271,6 +272,6 @@ class IsaacDriveEnv:
         # numpy_oneTime_action_xy = self.tensor_batch_oneTime_action_xy[0].cpu().detach().numpy()
         # plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
 
-        plt.xlim(-100, 100)
-        plt.ylim(-100, 100)
+        plt.xlim(-150, 150)
+        plt.ylim(-150, 150)
         plt.pause(0.1)

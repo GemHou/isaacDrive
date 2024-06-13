@@ -14,7 +14,7 @@ DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 BATCH_NUM = 100
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
-RESUME_NAME = "grad_s100b100_20240611"
+RESUME_NAME = "20240613_grad_s100b100_obs6"
 
 
 def main():
