@@ -243,11 +243,7 @@ class IsaacDriveEnv:
 
         return self.tensor_batch_oneTime_dis_start_relaEgo, self.tensor_batch_oneTime_dis_start_relaSim
 
-    def step(self, tensor_batch_oneTime_action_xy):
-        # main step
-        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
-        self.step_main()
-
+    def calc_reward(self):
         # calc self.reward
         # calc dis with action
         self.calc_dis()
@@ -255,12 +251,21 @@ class IsaacDriveEnv:
         reward_gt = torch.max(reward_gt, torch.ones_like(reward_gt) * -100)  # [B, 2] -100~0
         K = 0.2
         reward_gt_norm = 1 / (torch.exp(-K * reward_gt))
-
         reward_safe = self.tensor_batch_oneTime_dis_start_relaSim  # [B, 2] 0~+inf
         K = 0.1
-        reward_safe_norm = 1 - torch.exp(-K*reward_safe)
-
+        reward_safe_norm = 1 - torch.exp(-K * reward_safe)
         self.reward = reward_gt_norm * 0.8 + reward_safe_norm * 0.2
+        reward_info = {"reward_gt_norm": reward_gt_norm.detach(),
+                       "reward_safe_norm": reward_safe_norm.detach(),
+                       }
+        return reward_info
+
+    def step(self, tensor_batch_oneTime_action_xy):
+        # main step
+        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
+        self.step_main()
+
+        reward_info = self.calc_reward()
 
         # calc done
         if self.timestep >= 253 - 1:  # 253 - 1
@@ -271,7 +276,11 @@ class IsaacDriveEnv:
         # calc obs
         tensor_batch_obs = self.observe_once()
 
-        return self.reward, done, tensor_batch_obs
+        # calc info
+        info = {}
+        info.update(reward_info)
+
+        return self.reward, done, tensor_batch_obs, info
 
     def render(self):
         # print("self.tensor_batch_oneTime_dis_start_relaEgo[0]: ", self.tensor_batch_oneTime_dis_start_relaEgo[0], "self.tensor_batch_oneTime_dis_start_relaSim[0]: ", self.tensor_batch_oneTime_dis_start_relaSim[0])

@@ -26,7 +26,7 @@ def sim_one_epoch(isaac_drive_env, agent, tensor_batch_obs):
             # tensor_batch_oneTime_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
             # tensor_batch_oneTime_action_xy = torch.zeros(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
             tensor_batch_oneTime_action_xy = torch.ones(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
-        reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
+        reward, done, tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_oneTime_action_xy)
         # print("reward: ", reward)
         if RENDER_FLAG:
             isaac_drive_env.render()

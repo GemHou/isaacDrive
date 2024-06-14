@@ -66,7 +66,7 @@ def collect_experience_step(env, list_tensor_batch_action_xy, list_tensor_batch_
         tensor_batch_action_xy, tensor_batch_logp_a = generate_batch_actor(log_std, mu_net,
                                                                            tensor_batch_obs)
         tensor_batch_value = v_net(tensor_batch_obs)[:, 0]
-        tensor_batch_reward, bool_done, tensor_batch_obs_next = env.step(tensor_batch_action_xy)
+        tensor_batch_reward, bool_done, tensor_batch_obs_next, info = env.step(tensor_batch_action_xy)
         list_tensor_batch_obs.append(tensor_batch_obs)
         list_tensor_batch_action_xy.append(tensor_batch_action_xy)
         list_tensor_batch_reward.append(tensor_batch_reward)

@@ -14,7 +14,7 @@ DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 SCENE_NUM = 2
 BATCH_NUM = 1
-RESUME_NAME = "20240614_5700U_grad_s2b1_obs198"
+RESUME_NAME = "20240614_5700U_grad_s2b1_obs198_2"
 NUM_EPOCH = 50
 
 
@@ -50,7 +50,7 @@ def main():
             else:  # random
                 tensor_batch_action_xy = torch.randn(BATCH_NUM, 2, device=DEVICE)  # [B, 2]
 
-            reward, done, tensor_batch_obs = isaac_drive_env.step(tensor_batch_action_xy)
+            reward, done, tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_action_xy)
             tensor_time_loss = - reward
             list_tensor_time_loss.append(tensor_time_loss)
             if done:
