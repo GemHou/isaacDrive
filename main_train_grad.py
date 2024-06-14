@@ -3,7 +3,7 @@ import tqdm
 import wandb
 import torch
 import torch.optim as optim
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
@@ -12,9 +12,9 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-BATCH_NUM = 100
+BATCH_NUM = 2
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
-RESUME_NAME = "20240613_grad_s100b100_obs6"
+RESUME_NAME = "20240613_5900X_grad_s2b2_obs4wogt"
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
     agent.to(DEVICE)
     if BACKWARD_FREQ == "Epoch":
         lr = 0.001
-        num_epoch = 100
+        num_epoch = 200
     elif BACKWARD_FREQ == "Step":
         lr = 0.00001
         num_epoch = 50
@@ -66,10 +66,10 @@ def main():
                 loss_mean.backward(retain_graph=True)
                 optimizer.step()
                 list_float_loss.append(loss_mean.item())
-                if RENDER_FLAG and len(list_float_loss) % 100 == 0:
-                    plt.cla()
-                    plt.plot(list_float_loss)
-                    plt.pause(0.05)
+                # if RENDER_FLAG and len(list_float_loss) % 100 == 0:
+                #     plt.cla()
+                #     plt.plot(list_float_loss)
+                #     plt.pause(0.05)
             if BACKWARD_FREQ == "Epoch":
                 list_tensor_time_loss.append(tensor_time_loss)
             if done:
@@ -80,10 +80,10 @@ def main():
             return_epoch = -loss_final.item()
             wandb.log({"return_epoch": return_epoch})
             list_float_loss.append(loss_final.item())
-            if RENDER_FLAG and len(list_float_loss) % 10 == 0:
-                plt.cla()
-                plt.plot(list_float_loss)
-                plt.pause(0.05)
+            # if RENDER_FLAG and len(list_float_loss) % 10 == 0:
+            #     plt.cla()
+            #     plt.plot(list_float_loss)
+            #     plt.pause(0.05)
             loss_final.backward()
             optimizer.step()
     print("update network time: ", time.time() - start_time)  # 15 second
@@ -93,9 +93,10 @@ def main():
 
     torch.save(agent.state_dict(), "./data/interim/state_dict_grad.pt")
 
-    plt.cla()
-    plt.plot(list_float_loss)
-    plt.show()
+    # plt.cla()
+    # plt.plot(list_float_loss)
+    # # plt.show()
+    # plt.pause(0.0000000001)
 
     print("Finished...")
 

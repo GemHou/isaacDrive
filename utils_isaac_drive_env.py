@@ -19,18 +19,18 @@ def get_file_names(path):
 class IsaacDriveEnv:
     def trans_fileName_to_npz(self):
         start_time = time.time()
-        if False:
+        if True:
             list_str_path = [
                 "./data/raw/PL004_event_ddp_expert_event_20230509-162021_0.bag.2ba4e5d23f5007cc82f234b8f0fc1061.npz",
                 "./data/raw/PL004_event_ddp_expert_event_20230509-192636_0.bag.a844dc03230a81d0e402ba50866b99a6.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230509-195031_0.bag.b318970397ad08ed5d9151ad9986a298.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230509-201217_0.bag.0bbd27a1c38ca54329aec9e3e079552b.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230510-105631_0.bag.032aa42e53472a3b820a58076af2216d.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230510-110036_0.bag.087eef6ce5f40d887acadab8b667890a.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230510-114328_0.bag.dbe5e6d057a8eacc97bc41f5065f200c.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230510-120023_0.bag.dc6adfe75aa8ca27c55619c11d54e41c.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230510-143837_0.bag.adfda910b229b40ff9abdb8428d85a57.npz",
-                "./data/raw/PL004_event_ddp_expert_event_20230510-144653_0.bag.eb352e856a29fc7b20f17737779e11b1.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230509-195031_0.bag.b318970397ad08ed5d9151ad9986a298.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230509-201217_0.bag.0bbd27a1c38ca54329aec9e3e079552b.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230510-105631_0.bag.032aa42e53472a3b820a58076af2216d.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230510-110036_0.bag.087eef6ce5f40d887acadab8b667890a.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230510-114328_0.bag.dbe5e6d057a8eacc97bc41f5065f200c.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230510-120023_0.bag.dc6adfe75aa8ca27c55619c11d54e41c.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230510-143837_0.bag.adfda910b229b40ff9abdb8428d85a57.npz",
+                # "./data/raw/PL004_event_ddp_expert_event_20230510-144653_0.bag.eb352e856a29fc7b20f17737779e11b1.npz",
             ]
         else:
             list_str_path = get_file_names("data/raw/data_left_100/")
@@ -40,7 +40,7 @@ class IsaacDriveEnv:
         self.all_bag_num = len(list_str_path)
         list_npz_data = []
         for str_path in list_str_path:
-            print("str_path: ", str_path)
+            # print("str_path: ", str_path)
             npz_data = np.load(str_path, allow_pickle=True)
             list_npz_data.append(npz_data)
         print("file name 2 npz time per bag (ms): ", (time.time() - start_time) * 1000 / self.all_bag_num)
@@ -101,18 +101,20 @@ class IsaacDriveEnv:
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(6,))
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(4,))
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
     def observe_once(self):
         tensor_batch_obs = torch.tensor(
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [B, 2]
-        tensor_batch_obs = torch.cat([tensor_batch_obs,  # 2
-                                      self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # 2
-                                      self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart  # 2
-                                      ],
-                                     dim=1)
+        tensor_batch_obs = torch.cat([
+            tensor_batch_obs,  # 2
+            self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # 2
+            # self.tensor_batch_oneTime_ego_posXYStart_relaStart,  # 2
+            # self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart  # 2
+        ],
+            dim=1)
         return tensor_batch_obs.detach()
 
     def reset(self, batch_num):
