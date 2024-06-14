@@ -101,20 +101,22 @@ class IsaacDriveEnv:
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(4,))
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(202,))
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
     def observe_once(self):
-        tensor_batch_obs = torch.tensor(
+        tensor_batch_obs_st = torch.tensor(
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [B, 2]
+        tensor_batch_obs_other = self.tensor_batch_oneTime_other_pos_start_relaSim  # [B, 99, 2]
+        tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99*2)
         tensor_batch_obs = torch.cat([
-            tensor_batch_obs,  # 2
-            self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # 2
-            # self.tensor_batch_oneTime_ego_posXYStart_relaStart,  # 2
-            # self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart  # 2
-        ],
-            dim=1)
+            tensor_batch_obs_st,  # [B, 2]
+            self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # [B, 2]
+            # self.tensor_batch_oneTime_ego_posXYStart_relaStart,  # [B, 2]
+            # self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart  # [B, 2]
+            tensor_batch_obs_other,  # [B, 198]
+        ],dim=1)  # [B, 8]
         return tensor_batch_obs.detach()
 
     def reset(self, batch_num):
@@ -136,38 +138,13 @@ class IsaacDriveEnv:
         #     device=self.device,
         #     dtype=torch.float)  # [20, 254, 2]
         self.timestep = 0
+
+        self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep,
+                                                            1:, 0, 0:2]
+        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo
         tensor_batch_obs = self.observe_once()
 
         return tensor_batch_obs
-
-    def calc_dis(self):
-        self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
-
-        # self.tensor_batch_oneTime_other_pos_start_relaEgo  # [B, 99, 2]
-        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(
-            1).repeat_interleave(99, dim=1)
-
-        tensor_batch_oneTime_other_dis_start_relaEgo = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaEgo,
-                                                                  dim=-1)  # [B, 99]
-        tensor_batch_oneTime_other_dis_start_relaSim = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaSim,
-                                                                  dim=-1)  # [B, 99]
-
-        temp_mask = torch.logical_and(self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 0] != 0,
-                                      self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 1] != 0)
-
-        tensor_batch_oneTime_other_dis_start_relaEgo = torch.where(temp_mask,
-                                                                   tensor_batch_oneTime_other_dis_start_relaEgo,
-                                                                   torch.tensor(999))  # [20, 99]
-        tensor_batch_oneTime_other_dis_start_relaSim = torch.where(temp_mask,
-                                                                   tensor_batch_oneTime_other_dis_start_relaSim,
-                                                                   torch.tensor(999))  # [20, 99]
-
-        self.tensor_batch_oneTime_dis_start_relaEgo, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaEgo,
-                                                                   dim=-1)  # [B]
-        self.tensor_batch_oneTime_dis_start_relaSim, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaSim,
-                                                                   dim=-1)  # [B]
-
-        return self.tensor_batch_oneTime_dis_start_relaEgo, self.tensor_batch_oneTime_dis_start_relaSim
 
     def step_main_ego_pos(self):
         tensor_batch_oneTime_ego_deltaPosXYStart = - self.tensor_batch_ego_gt_traj_hist[:, self.timestep,
@@ -208,14 +185,44 @@ class IsaacDriveEnv:
                                                                   1).repeat_interleave(10,
                                                                                        dim=1)
 
+    def step_main_simulation(self):
+        # simulation
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaStart.detach() + self.tensor_batch_oneTime_action_xy
+        self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
+        # self.tensor_batch_oneTime_other_pos_start_relaEgo  # [B, 99, 2]
+        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(
+            1).repeat_interleave(99, dim=1)  # [B, 99, 2]
+
     def step_main(self):
         self.timestep += 1
         self.step_main_ego_pos()  # calc tensor_batch_oneTime_ego_posXYStart_relaStart 自车位置
         self.step_main_other_pos()  # calc tensor_cpu_oneTime_other_pos_start_relaStart 周车位置
         self.step_main_ego_posHis()  # calc tensor_cpu_oneTime_ego_pos_his_start_relaStart 自车历史轨迹
         self.step_main_other_posHis()  # calc tensorCpu_oneTime_other_pos_his_start_relaStart 周车历史轨迹
-        # simulation
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaStart.detach() + self.tensor_batch_oneTime_action_xy
+        self.step_main_simulation()
+
+    def calc_dis(self):
+        tensor_batch_oneTime_other_dis_start_relaEgo = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaEgo,
+                                                                  dim=-1)  # [B, 99]
+        tensor_batch_oneTime_other_dis_start_relaSim = torch.norm(self.tensor_batch_oneTime_other_pos_start_relaSim,
+                                                                  dim=-1)  # [B, 99]
+
+        temp_mask = torch.logical_and(self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 0] != 0,
+                                      self.tensor_batch_oneTime_other_pos_start_relaEgo[:, :, 1] != 0)
+
+        tensor_batch_oneTime_other_dis_start_relaEgo = torch.where(temp_mask,
+                                                                   tensor_batch_oneTime_other_dis_start_relaEgo,
+                                                                   torch.tensor(999))  # [20, 99]
+        tensor_batch_oneTime_other_dis_start_relaSim = torch.where(temp_mask,
+                                                                   tensor_batch_oneTime_other_dis_start_relaSim,
+                                                                   torch.tensor(999))  # [20, 99]
+
+        self.tensor_batch_oneTime_dis_start_relaEgo, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaEgo,
+                                                                   dim=-1)  # [B]
+        self.tensor_batch_oneTime_dis_start_relaSim, _ = torch.min(tensor_batch_oneTime_other_dis_start_relaSim,
+                                                                   dim=-1)  # [B]
+
+        return self.tensor_batch_oneTime_dis_start_relaEgo, self.tensor_batch_oneTime_dis_start_relaSim
 
     def step(self, tensor_batch_oneTime_action_xy):
         # main step

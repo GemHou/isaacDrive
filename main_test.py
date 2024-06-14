@@ -6,7 +6,7 @@ from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-BATCH_NUM = 10
+BATCH_NUM = 2
 RENDER_FLAG = True
 
 
