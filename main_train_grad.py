@@ -12,9 +12,11 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-BATCH_NUM = 2
+SCENE_NUM = 100
+BATCH_NUM = 100
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
-RESUME_NAME = "20240614_5900X_grad_s2b2_obs202"
+RESUME_NAME = "20240614_5900X_grad_s100b100_obs202"
+NUM_EPOCH = 100
 
 
 def main():
@@ -23,7 +25,7 @@ def main():
         resume=RESUME_NAME  # HjScenarioEnv
     )
 
-    isaac_drive_env = IsaacDriveEnv(device=DEVICE)
+    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
     obs_dim = isaac_drive_env.observation_space.shape[0]
     agent = Agent(obs_dim=obs_dim)
     # state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
@@ -31,7 +33,7 @@ def main():
     agent.to(DEVICE)
     if BACKWARD_FREQ == "Epoch":
         lr = 0.001
-        num_epoch = 200
+        num_epoch = NUM_EPOCH
     elif BACKWARD_FREQ == "Step":
         lr = 0.00001
         num_epoch = 50

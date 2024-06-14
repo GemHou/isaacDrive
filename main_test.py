@@ -6,7 +6,8 @@ from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-BATCH_NUM = 2
+SCENE_NUM = 100
+BATCH_NUM = 1
 RENDER_FLAG = True
 
 
@@ -37,7 +38,7 @@ def main():
     start_time = time.time()
 
     # prepare environment
-    isaac_drive_env = IsaacDriveEnv(device=DEVICE)
+    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
 
     # prepare agent
     agent = prepare_agent(obs_dim=isaac_drive_env.observation_space.shape[0])
