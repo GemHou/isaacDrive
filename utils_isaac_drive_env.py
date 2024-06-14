@@ -253,9 +253,12 @@ class IsaacDriveEnv:
         self.calc_dis()
         # self.reward = tensor_batch_oneTime_dis_start_withAction - tensor_batch_oneTime_dis_start_woAction
         # self.reward = - tensor_batch_oneTime_dis_start_withAction
-        reward_gt = - torch.norm(self.tensor_batch_oneTime_sim_posXYStart_relaEgo, dim=-1)
+        reward_gt = - torch.norm(self.tensor_batch_oneTime_sim_posXYStart_relaEgo, dim=-1)  # [B, 2] -inf~0
+        reward_gt = torch.max(reward_gt, torch.ones_like(reward_gt) * -100)  # [B, 2] -100~0
+        K = 0.2
+        reward_gt_norm = 1 / (torch.exp(-K * reward_gt))
         reward_safe = self.tensor_batch_oneTime_dis_start_relaSim
-        self.reward = reward_gt  #  + reward_safe
+        self.reward = reward_gt_norm  # + reward_safe
 
         # calc done
         if self.timestep >= 253 - 1:  # 253 - 1

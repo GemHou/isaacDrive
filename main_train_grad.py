@@ -14,7 +14,7 @@ DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 SCENE_NUM = 2
 BATCH_NUM = 1
-RESUME_NAME = "20240614_5900X_grad_s2b1_obs198-4"
+RESUME_NAME = "20240614_5900X_grad_s2b1_obs198-7"
 NUM_EPOCH = 50
 
 
@@ -56,9 +56,9 @@ def main():
             if done:
                 break
         tensor_epoch_loss = torch.stack(list_tensor_time_loss, dim=1)
-        loss_final = tensor_epoch_loss.sum(dim=-1).mean()
-        return_epoch = -loss_final.item()
-        wandb.log({"return_epoch": return_epoch})
+        loss_final = tensor_epoch_loss.mean(dim=-1).mean()
+        reward_per_step = -loss_final.item()
+        wandb.log({"reward_per_step": reward_per_step})
         list_float_loss.append(loss_final.item())
         loss_final.backward()
         optimizer.step()
