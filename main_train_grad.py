@@ -13,10 +13,10 @@ torch.autograd.set_detect_anomaly(True)
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 SCENE_NUM = 100
-BATCH_NUM = 100
+BATCH_NUM = 90
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
-RESUME_NAME = "20240614_5900X_grad_s100b100_obs100f-3"
-NUM_EPOCH = 100
+RESUME_NAME = "20240614_5900X_grad_s100b90_obs198"
+NUM_EPOCH = 50
 
 
 def main():
@@ -47,7 +47,7 @@ def main():
 
     for epoch in tqdm.tqdm(range(num_epoch)):
 
-        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM)
+        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, mode="Train")
         if BACKWARD_FREQ == "Epoch":
             optimizer.zero_grad()
             list_tensor_time_loss = []
