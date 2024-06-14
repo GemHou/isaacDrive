@@ -14,8 +14,8 @@ DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 SCENE_NUM = 2
 BATCH_NUM = 1
-RESUME_NAME = "20240614_5900X_grad_s2b1_obs198-12"
-NUM_EPOCH = 200
+RESUME_NAME = "20240614_5700U_grad_s2b1_obs198"
+NUM_EPOCH = 50
 
 
 def main():
