@@ -6,8 +6,8 @@ from utils_agent import Agent
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-SCENE_NUM = 100
-BATCH_NUM = 10
+SCENE_NUM = 2
+BATCH_NUM = 1
 RENDER_FLAG = True
 
 
@@ -44,7 +44,7 @@ def main():
     agent = prepare_agent(obs_dim=isaac_drive_env.observation_space.shape[0])
 
     for _ in tqdm.tqdm(range(500)):
-        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, mode="Test")
+        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, mode="Train")  # Train Test
         sim_one_epoch(isaac_drive_env, agent, tensor_batch_obs)
 
     print("all time: ", time.time() - start_time)

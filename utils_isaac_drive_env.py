@@ -129,6 +129,7 @@ class IsaacDriveEnv:
     def reset(self, batch_num, mode="Train"):
         self.batch_num = batch_num
         if mode == "Train":
+            # allTest_bag_num
             allTrain_bag_num = int(self.all_bag_num * 0.9)
             scene_indexes = list(range(allTrain_bag_num))
         elif mode == "Test":
@@ -254,7 +255,7 @@ class IsaacDriveEnv:
         # self.reward = - tensor_batch_oneTime_dis_start_withAction
         reward_gt = - torch.norm(self.tensor_batch_oneTime_sim_posXYStart_relaEgo, dim=-1)
         reward_safe = self.tensor_batch_oneTime_dis_start_relaSim
-        self.reward = reward_gt + reward_safe
+        self.reward = reward_gt  #  + reward_safe
 
         # calc done
         if self.timestep >= 253 - 1:  # 253 - 1

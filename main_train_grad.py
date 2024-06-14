@@ -12,10 +12,10 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-SCENE_NUM = 100
-BATCH_NUM = 90
+SCENE_NUM = 2
+BATCH_NUM = 1
 BACKWARD_FREQ = "Epoch"  # "Epoch"  "Step"
-RESUME_NAME = "20240614_5900X_grad_s100b90_obs198"
+RESUME_NAME = "20240614_5900X_grad_s2b1_obs198-3"
 NUM_EPOCH = 50
 
 
