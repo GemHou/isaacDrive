@@ -14,11 +14,12 @@ DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
 SCENE_NUM = 2
 TRAIN_BATCH_NUM = 1
-RESUME_NAME = "20240614_5700U_grad_s2b1_obs198_3"
+TEST_BATCH_NUM = 1
+RESUME_NAME = "2024061422_5700U_grad_s2b1_obs198"
 NUM_EPOCH = 50
 
 
-def epoch_train(agent, isaac_drive_env, list_float_loss, optimizer):
+def epoch_train(agent, isaac_drive_env, optimizer):
     tensor_batch_obs = isaac_drive_env.reset(batch_num=TRAIN_BATCH_NUM, mode="Train")
     optimizer.zero_grad()
     list_tensor_time_loss = []
@@ -45,12 +46,37 @@ def epoch_train(agent, isaac_drive_env, list_float_loss, optimizer):
     reward_per_step = -loss_final.item()
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
-    wandb.log({"reward_per_step": reward_per_step})
-    wandb.log({"reward_per_step_gt": reward_gt})
-    wandb.log({"reward_per_step_safe": reward_safe})
-    list_float_loss.append(loss_final.item())
+    wandb.log({"train/reward_per_step": reward_per_step})
+    wandb.log({"train/reward_per_step_gt": reward_gt})
+    wandb.log({"train/reward_per_step_safe": reward_safe})
     loss_final.backward()
     optimizer.step()
+
+
+def epoch_test(agent, isaac_drive_env):
+    tensor_batch_obs = isaac_drive_env.reset(batch_num=TEST_BATCH_NUM, mode="Test")
+    list_tensor_time_loss = []
+    list_tensor_time_reward_gt = []
+    list_tensor_time_reward_safe = []
+    while True:
+        tensor_batch_action_xy = agent(tensor_batch_obs)  # [B, 2]
+        reward, done, tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_action_xy)
+        tensor_time_loss = - reward
+        list_tensor_time_loss.append(tensor_time_loss)
+        list_tensor_time_reward_gt.append(info["reward_gt_norm"])
+        list_tensor_time_reward_safe.append(info["reward_safe_norm"])
+        if done:
+            break
+    tensor_epoch_loss = torch.stack(list_tensor_time_loss, dim=1)
+    tensor_epoch_reward_gt = torch.stack(list_tensor_time_reward_gt, dim=1)
+    tensor_epoch_reward_safe = torch.stack(list_tensor_time_reward_safe, dim=1)
+    loss_final = tensor_epoch_loss.mean(dim=-1).mean()
+    reward_per_step = -loss_final.item()
+    reward_gt = tensor_epoch_reward_gt.mean()
+    reward_safe = tensor_epoch_reward_safe.mean()
+    wandb.log({"test/reward_per_step": reward_per_step})
+    wandb.log({"test/reward_per_step_gt": reward_gt})
+    wandb.log({"test/reward_per_step_safe": reward_safe})
 
 
 def main():
@@ -69,12 +95,11 @@ def main():
     num_epoch = NUM_EPOCH
     optimizer = optim.Adam(agent.parameters(), lr=lr)
 
-    list_float_loss = []
-
     start_time = time.time()
 
     for _ in tqdm.tqdm(range(num_epoch)):
-        epoch_train(agent, isaac_drive_env, list_float_loss, optimizer)
+        epoch_train(agent, isaac_drive_env, optimizer)
+        epoch_test(agent, isaac_drive_env)
 
     print("update network time: ", time.time() - start_time)  # 15 second
     if not RENDER_FLAG:
