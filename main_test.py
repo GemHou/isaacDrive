@@ -44,7 +44,7 @@ def main():
     agent = prepare_agent(obs_dim=isaac_drive_env.observation_space.shape[0])
 
     for _ in tqdm.tqdm(range(500)):
-        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, mode="Test")  # Train Test
+        tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, mode="Train")  # Train Test
         sim_one_epoch(isaac_drive_env, agent, tensor_batch_obs)
 
     print("all time: ", time.time() - start_time)
