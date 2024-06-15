@@ -15,8 +15,8 @@ RENDER_FLAG = True
 SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
-RESUME_NAME = "20240615_5700U_grad_s100b90_obs198_r0802_layer5"
-NUM_EPOCH = 50
+RESUME_NAME = "20240615_5700U_grad_s100b90_obs200_r0802_layer3_2"
+NUM_EPOCH = 20
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
