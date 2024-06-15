@@ -323,7 +323,7 @@ class IsaacDriveEnv:
 
         plt.scatter(0, 0, alpha=0.5, c="skyblue")  # 自车起点位置 Skyblue=Start
 
-        plt.xlim(-50, 50)
-        plt.ylim(-50, 50)
+        plt.xlim(-150, 150)
+        plt.ylim(-150, 150)
         # plt.axis("equal")
         plt.pause(0.1)

@@ -57,9 +57,12 @@ class AgentVehicleDynamic(nn.Module):
         # x = self.tanh(x)
         x = self.fc_last(x)
         action_throttleWheel = torch.tanh(x)
-        action_throttleWheel = torch.zeros(bs, 2, device=action_throttleWheel.device)
+        action_throttleWheel = torch.zeros(bs, 2, device=action_throttleWheel.device)  # [B, 2]
+        action_throttleWheel[:, 0] = torch.ones(bs, device=action_throttleWheel.device)
 
-        tensor_batch_speed_new = tensor_batch_speed
+        tensor_batch_acceleration = action_throttleWheel[:, 0] * 9.81 * 0.7
+
+        tensor_batch_speed_new = tensor_batch_speed + tensor_batch_acceleration * 0.1
         tensor_batch_yaw_new = tensor_batch_yaw
 
         action_deltaPosX = torch.cos(tensor_batch_yaw_new) * tensor_batch_speed_new * 0.1  # [B]
