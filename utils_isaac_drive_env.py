@@ -7,6 +7,9 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt
 
+W_gt = 0.5
+W_safe = 0.5
+
 
 def get_file_names(path):
     file_names = []
@@ -249,12 +252,12 @@ class IsaacDriveEnv:
         self.calc_dis()
         reward_gt = - torch.norm(self.tensor_batch_oneTime_sim_posXYStart_relaEgo, dim=-1)  # [B, 2] -inf~0
         reward_gt = torch.max(reward_gt, torch.ones_like(reward_gt) * -100)  # [B, 2] -100~0
-        K = 0.2
-        reward_gt_norm = 1 / (torch.exp(-K * reward_gt))
+        K_gt = 0.2
+        reward_gt_norm = 1 / (torch.exp(-K_gt * reward_gt))
         reward_safe = self.tensor_batch_oneTime_dis_start_relaSim  # [B, 2] 0~+inf
-        K = 0.1
-        reward_safe_norm = 1 - torch.exp(-K * reward_safe)
-        self.reward = reward_gt_norm * 0.8 + reward_safe_norm * 0.2
+        K_safe = 0.1
+        reward_safe_norm = 1 - torch.exp(-K_safe * reward_safe)
+        self.reward = reward_gt_norm * W_gt + reward_safe_norm * W_safe
         reward_info = {"reward_gt_norm": reward_gt_norm.detach(),
                        "reward_safe_norm": reward_safe_norm.detach(),
                        }
