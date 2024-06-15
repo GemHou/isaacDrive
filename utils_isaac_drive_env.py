@@ -7,8 +7,8 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt
 
-W_gt = 0.5
-W_safe = 0.5
+W_gt = 0.8
+W_safe = 0.2
 
 
 def get_file_names(path):
