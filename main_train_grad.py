@@ -5,7 +5,7 @@ import torch
 import torch.optim as optim
 # from matplotlib import pyplot as plt
 
-from utils_agent import Agent
+from utils_agent import Agent, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
 torch.autograd.set_detect_anomaly(True)
@@ -87,7 +87,8 @@ def main():
 
     isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
     obs_dim = isaac_drive_env.observation_space.shape[0]
-    agent = Agent(obs_dim=obs_dim)
+    # agent = Agent(obs_dim=obs_dim)
+    agent = AgentVehicleDynamic(obs_dim=obs_dim)
     # state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
     # agent.load_state_dict(state_dict)
     agent.to(DEVICE)

@@ -219,14 +219,14 @@ class IsaacDriveEnv:
 
     def step_main_simulation(self):
         # simulation
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaStart.detach() + self.tensor_batch_oneTime_action_xy
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaStart.detach() + self.tensor_batch_oneTime_action_deltaPosXy
         self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
         # self.tensor_batch_oneTime_other_pos_start_relaEgo  # [B, 99, 2]
         self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaEgo.unsqueeze(
             1).repeat_interleave(99, dim=1)  # [B, 99, 2]
 
-        self.tensor_batch_oneTime_sim_speed = torch.norm(self.tensor_batch_oneTime_action_xy, dim=-1)
-        self.tensor_batch_oneTime_sim_yaw = torch.arctan2(self.tensor_batch_oneTime_action_xy[:, 1], self.tensor_batch_oneTime_action_xy[:, 0])
+        self.tensor_batch_oneTime_sim_speed = torch.norm(self.tensor_batch_oneTime_action_deltaPosXy, dim=-1) / 0.1
+        self.tensor_batch_oneTime_sim_yaw = torch.arctan2(self.tensor_batch_oneTime_action_deltaPosXy[:, 1], self.tensor_batch_oneTime_action_deltaPosXy[:, 0])
 
     def step_main(self):
         self.timestep += 1
@@ -276,9 +276,9 @@ class IsaacDriveEnv:
                        }
         return reward_info
 
-    def step(self, tensor_batch_oneTime_action_xy):
+    def step(self, tensor_batch_oneTime_action_deltaPosXy):
         # main step
-        self.tensor_batch_oneTime_action_xy = tensor_batch_oneTime_action_xy
+        self.tensor_batch_oneTime_action_deltaPosXy = tensor_batch_oneTime_action_deltaPosXy
         self.step_main()
 
         reward_info = self.calc_reward()
@@ -299,10 +299,6 @@ class IsaacDriveEnv:
         return self.reward, done, tensor_batch_obs, info
 
     def render(self):
-        # print("self.tensor_batch_oneTime_dis_start_relaEgo[0]: ", self.tensor_batch_oneTime_dis_start_relaEgo[0], "self.tensor_batch_oneTime_dis_start_relaSim[0]: ", self.tensor_batch_oneTime_dis_start_relaSim[0])
-        # print("self.reward: ", self.reward, "self.tensor_batch_oneTime_action_xy: ",
-        #       self.tensor_batch_oneTime_action_xy)
-
         plt.cla()
 
         plt.scatter(self.tensorCpu_oneTime_other_pos_his_start_relaStart[0, :, 0],
@@ -323,14 +319,11 @@ class IsaacDriveEnv:
 
         plt.scatter(self.tensor_batch_oneTime_sim_posXYStart_relaStart[0, 0].detach(),
                     self.tensor_batch_oneTime_sim_posXYStart_relaStart[0, 1].detach(),
-                    alpha=0.5, c="salmon")  # 自车sim当前位置 Salmon=simulation
+                    alpha=0.75, c="salmon", marker="*")  # 自车sim当前位置 Salmon=simulation
 
         plt.scatter(0, 0, alpha=0.5, c="skyblue")  # 自车起点位置 Skyblue=Start
 
-        # numpy_oneTime_action_xy = self.tensor_batch_oneTime_action_xy[0].cpu().detach().numpy()
-        # plt.plot([0, numpy_oneTime_action_xy[0]], [0, numpy_oneTime_action_xy[1]], "r")
-
-        plt.xlim(-150, 150)
-        plt.ylim(-150, 150)
+        plt.xlim(-50, 50)
+        plt.ylim(-50, 50)
         # plt.axis("equal")
         plt.pause(0.1)
