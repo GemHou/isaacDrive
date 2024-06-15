@@ -7,8 +7,8 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt
 
-W_gt = 0.8
-W_safe = 0.2
+W_gt = 1.0
+W_safe = 0.0001
 
 
 def get_file_names(path):
@@ -109,7 +109,7 @@ class IsaacDriveEnv:
          tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(200,))
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(202,))
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
     def observe_once(self):
@@ -120,6 +120,8 @@ class IsaacDriveEnv:
         # tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]
         # tensor_batch_obs_other = tensor_batch_obs_other[:, 49:, :]
         tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99 * 2)
+        tensor_batch_oneTime_sim_velocityX = torch.cos(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
+        tensor_batch_oneTime_sim_velocityY = torch.cos(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         tensor_batch_obs = torch.cat([
             # tensor_batch_obs_st,  # [B, 2]
             # self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # [B, 2]
@@ -127,6 +129,8 @@ class IsaacDriveEnv:
             # self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart  # [B, 2]
             self.tensor_batch_oneTime_sim_speed.unsqueeze(1),  # [B, 1]
             self.tensor_batch_oneTime_sim_yaw.unsqueeze(1),  # [B, 1]
+            tensor_batch_oneTime_sim_velocityX.unsqueeze(1),
+            tensor_batch_oneTime_sim_velocityY.unsqueeze(1),
             tensor_batch_obs_other,  # [B, 198]
         ], dim=1)  # [B, 8]
         return tensor_batch_obs.detach()
