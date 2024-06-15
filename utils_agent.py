@@ -38,6 +38,20 @@ class AgentVehicleDynamic(nn.Module):
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
+        self.turning_radis = 5
+
+    def calc_vehicle_dynamic(self, action_throttleWheel, tensor_batch_speed, tensor_batch_yaw):
+        tensor_batch_acceleration = action_throttleWheel[:, 0] * 9.81 * 0.7
+        tensor_batch_speed_new = tensor_batch_speed + tensor_batch_acceleration * 0.1
+        tensor_batch_speed_new = torch.max(tensor_batch_speed_new, torch.ones_like(tensor_batch_speed_new) * 0.01)
+
+        tensor_batch_yaw_new = tensor_batch_yaw
+
+        action_deltaPosX = torch.cos(tensor_batch_yaw_new) * tensor_batch_speed_new * 0.1  # [B]
+        action_deltaPosY = torch.sin(tensor_batch_yaw_new) * tensor_batch_speed_new * 0.1  # [B]
+        action_deltaPosXy = torch.stack([action_deltaPosX, action_deltaPosY], dim=1)
+        return action_deltaPosXy
+
     def forward(self, x):
         """
             x: [B, 200]
@@ -60,15 +74,6 @@ class AgentVehicleDynamic(nn.Module):
         action_throttleWheel = torch.zeros(bs, 2, device=action_throttleWheel.device)  # [B, 2]
         action_throttleWheel[:, 0] = torch.ones(bs, device=action_throttleWheel.device) * -1
 
-        tensor_batch_acceleration = action_throttleWheel[:, 0] * 9.81 * 0.7
-
-        tensor_batch_speed_new = tensor_batch_speed + tensor_batch_acceleration * 0.1
-        tensor_batch_speed_new = torch.max(tensor_batch_speed_new, torch.ones_like(tensor_batch_speed_new) * 0.01)
-        tensor_batch_yaw_new = tensor_batch_yaw
-
-        action_deltaPosX = torch.cos(tensor_batch_yaw_new) * tensor_batch_speed_new * 0.1  # [B]
-        action_deltaPosY = torch.sin(tensor_batch_yaw_new) * tensor_batch_speed_new * 0.1  # [B]
-
-        action_deltaPosXy = torch.stack([action_deltaPosX, action_deltaPosY], dim=1)
+        action_deltaPosXy = self.calc_vehicle_dynamic(action_throttleWheel, tensor_batch_speed, tensor_batch_yaw)
 
         return action_deltaPosXy  # [B, 2]
