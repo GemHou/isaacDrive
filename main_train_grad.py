@@ -12,10 +12,10 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-SCENE_NUM = 2
-TRAIN_BATCH_NUM = 1
-TEST_BATCH_NUM = 1
-RESUME_NAME = "20240619_5900X_grad_s2b1_obs210_r0802_layer3_lr00005_vehicleDynamic_2"  # 5700U 5900X
+SCENE_NUM = 100
+TRAIN_BATCH_NUM = 90
+TEST_BATCH_NUM = 10
+RESUME_NAME = "20240619_5900X_grad_s100b90_obs202_r0802_layer3_lr00005_vehicleDynamic"  # 5700U 5900X 2070S
 NUM_EPOCH = 2000
 
 
@@ -101,6 +101,7 @@ def main():
     for _ in tqdm.tqdm(range(num_epoch)):
         epoch_train(agent, isaac_drive_env, optimizer)
         epoch_test(agent, isaac_drive_env)
+        torch.save(agent.state_dict(), "./data/interim/state_dict_grad.pt")
 
     print("update network time: ", time.time() - start_time)  # 15 second
     if not RENDER_FLAG:

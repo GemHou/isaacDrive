@@ -36,7 +36,7 @@ class AgentVehicleDynamic(nn.Module):
         # self.fc_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
         # self.fc_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
         self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
-        self.fc_2_1 = nn.Linear(210-198, 64)
+        self.fc_2_1 = nn.Linear(202-198, 64)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
@@ -62,7 +62,7 @@ class AgentVehicleDynamic(nn.Module):
         """
             x: [B, 200]
         """
-        assert x.size(1) == 210
+        assert x.size(1) == 202
         bs, _ = x.size()
         tensor_batch_speed = x[:, 0]
         tensor_batch_yaw = x[:, 1]
@@ -76,7 +76,7 @@ class AgentVehicleDynamic(nn.Module):
         # x1 = self.fc_hid3(x1)
         # x1 = self.tanh(x1)
 
-        x2 = self.fc_2_1(x[:, 0:210-198])  # [B, 64]
+        x2 = self.fc_2_1(x[:, 0:202-198])  # [B, 64]
 
         x = torch.cat((x1, x2), dim=-1)
         x = self.fc_last(x)
