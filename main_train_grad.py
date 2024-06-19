@@ -12,11 +12,11 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-SCENE_NUM = 100
-TRAIN_BATCH_NUM = 90
-TEST_BATCH_NUM = 10
-RESUME_NAME = "2024061517_5700U_grad_s100b90_obs202_r0802_layer3_vehicleDynamic_7"
-NUM_EPOCH = 200
+SCENE_NUM = 2
+TRAIN_BATCH_NUM = 1
+TEST_BATCH_NUM = 1
+RESUME_NAME = "20240619_5900X_grad_s2b1_obs210_r0802_layer3_lr00005_vehicleDynamic_2"  # 5700U 5900X
+NUM_EPOCH = 2000
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
@@ -92,7 +92,7 @@ def main():
     # state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
     # agent.load_state_dict(state_dict)
     agent.to(DEVICE)
-    lr = 0.001
+    lr = 0.0005
     num_epoch = NUM_EPOCH
     optimizer = optim.Adam(agent.parameters(), lr=lr)
 

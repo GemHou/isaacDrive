@@ -6,7 +6,7 @@ from utils_agent import Agent, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-SCENE_NUM = 80
+SCENE_NUM = 1
 BATCH_NUM = 1
 RENDER_FLAG = True
 TRAIN_TEST_MODE = "Test"  # Train Test
