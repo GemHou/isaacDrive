@@ -29,30 +29,42 @@ class Agent(nn.Module):
 
 
 class AgentAcceleration(nn.Module):
-    def __init__(self, obs_dim):
+    def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
-        self.fc_first = nn.Linear(obs_dim, 64)  # , dtype=torch.float
-        self.fc_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
-        # self.fc_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
-        # self.fc_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
-        self.fc_last = nn.Linear(64, 2)  # , dtype=torch.float
+        self.fc_other_first = nn.Linear(198, 64)  # , dtype=torch.float
+        self.fc_other_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
+        # self.fc_other_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
+        # self.fc_other_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
+
+        self.fc_ego_first = nn.Linear(202 - 198, 64)
+
+        self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
+
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
         self.friction = 1.0  #
 
-    def forward(self, x):
-        tensor_batch_speed = x[:, 0]
-        tensor_batch_yaw = x[:, 1]
+    def forward(self, dict_tensor_batch_obs):
+        tensor_batch_obs_other = dict_tensor_batch_obs["tensor_batch_obs_other"]
+        tensor_batch_ego = dict_tensor_batch_obs["tensor_batch_ego"]
+        bs, _ = tensor_batch_ego.size()
+        tensor_batch_speed = tensor_batch_ego[:, 0]
+        tensor_batch_yaw = tensor_batch_ego[:, 1]
 
-        x = self.fc_first(x)
-        x = self.tanh(x)
-        x = self.fc_hid1(x)
-        x = self.tanh(x)
-        # x = self.fc_hid2(x)
-        # x = self.tanh(x)
-        # x = self.fc_hid3(x)
-        # x = self.tanh(x)
+        x_other = self.fc_other_first(tensor_batch_obs_other)
+        x_other = self.tanh(x_other)
+        x_other = self.fc_other_hid1(x_other)
+        x_other = self.tanh(x_other)
+        # x_other = self.fc_other_hid2(x_other)
+        # x_other = self.tanh(x_other)
+        # x_other = self.fc_other_hid3(x_other)
+        # x_other = self.tanh(x_other)
+
+        x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
+
+        x = torch.cat((x_other, x_ego), dim=-1)
+
         x = self.fc_last(x)  # [B, 2]
         x = self.tanh(x)  # [B, 2] -1~1
         action_accelerationXy = x * 9.81 * self.friction  # -10 ～ 10
@@ -73,14 +85,18 @@ class AgentAcceleration(nn.Module):
 
 
 class AgentVehicleDynamic(nn.Module):
-    def __init__(self, obs_dim):
+    def __init__(self):
         super(AgentVehicleDynamic, self).__init__()
-        self.fc_first = nn.Linear(obs_dim, 64)  # , dtype=torch.float
-        self.fc_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
-        self.fc_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
-        self.fc_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
+
+        self.fc_other_first = nn.Linear(198, 64)  # , dtype=torch.float
+        self.fc_other_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
+        self.fc_other_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
+        self.fc_other_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
+
+        self.fc_ego_first = nn.Linear(202-198, 64)
+
         self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
-        self.fc_2_1 = nn.Linear(202-198, 64)
+
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
@@ -103,27 +119,28 @@ class AgentVehicleDynamic(nn.Module):
         action_deltaPosXy = torch.stack([action_deltaPosX, action_deltaPosY], dim=1)
         return action_deltaPosXy
 
-    def forward(self, x):
+    def forward(self, dict_tensor_batch_obs):
         """
             x: [B, 200]
         """
-        assert x.size(1) == 202
-        bs, _ = x.size()
-        tensor_batch_speed = x[:, 0]
-        tensor_batch_yaw = x[:, 1]
+        tensor_batch_obs_other = dict_tensor_batch_obs["tensor_batch_obs_other"]
+        tensor_batch_ego = dict_tensor_batch_obs["tensor_batch_ego"]
+        bs, _ = tensor_batch_ego.size()
+        tensor_batch_speed = tensor_batch_ego[:, 0]
+        tensor_batch_yaw = tensor_batch_ego[:, 1]
 
-        x1 = self.fc_first(x)
-        x1 = self.tanh(x1)
-        x1 = self.fc_hid1(x1)
-        x1 = self.tanh(x1)
-        x1 = self.fc_hid2(x1)
-        x1 = self.tanh(x1)
-        x1 = self.fc_hid3(x1)
-        x1 = self.tanh(x1)
+        x_other = self.fc_other_first(tensor_batch_obs_other)
+        x_other = self.tanh(x_other)
+        x_other = self.fc_other_hid1(x_other)
+        x_other = self.tanh(x_other)
+        x_other = self.fc_other_hid2(x_other)
+        x_other = self.tanh(x_other)
+        x_other = self.fc_other_hid3(x_other)
+        x_other = self.tanh(x_other)
 
-        x2 = self.fc_2_1(x[:, 0:202-198])  # [B, 64]
+        x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
 
-        x = torch.cat((x1, x2), dim=-1)
+        x = torch.cat((x_other, x_ego), dim=-1)
         x = self.fc_last(x)
         action_throttleWheel = torch.tanh(x)
         # action_throttleWheel = torch.zeros(bs, 2, device=action_throttleWheel.device)  # [B, 2]

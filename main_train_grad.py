@@ -12,10 +12,10 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-SCENE_NUM = 2
-TRAIN_BATCH_NUM = 1
-TEST_BATCH_NUM = 1
-RESUME_NAME = "20240620_5900X_grad_s2b1_obs202_r0802_layer3_lr00005_acceleration_randOther"  # 5700U 5900X 2070S
+SCENE_NUM = 100
+TRAIN_BATCH_NUM = 90
+TEST_BATCH_NUM = 10
+RESUME_NAME = "2024062019_5900X_grad_s100b90_obs202_r0802_layer3_lr00005_acceleration_2"  # 5700U 5900X 2070S
 NUM_EPOCH = 500
 
 
@@ -54,13 +54,13 @@ def epoch_train(agent, isaac_drive_env, optimizer):
 
 
 def epoch_test(agent, isaac_drive_env):
-    tensor_batch_obs = isaac_drive_env.reset(batch_num=TEST_BATCH_NUM, mode="Test")
+    dict_tensor_batch_obs = isaac_drive_env.reset(batch_num=TEST_BATCH_NUM, mode="Test")
     list_tensor_time_loss = []
     list_tensor_time_reward_gt = []
     list_tensor_time_reward_safe = []
     while True:
-        tensor_batch_action_xy = agent(tensor_batch_obs)  # [B, 2]
-        reward, done, tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_action_xy)
+        tensor_batch_action_xy = agent(dict_tensor_batch_obs)  # [B, 2]
+        reward, done, dict_tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_action_xy)
         tensor_time_loss = - reward
         list_tensor_time_loss.append(tensor_time_loss)
         list_tensor_time_reward_gt.append(info["reward_gt_norm"])
@@ -86,9 +86,9 @@ def main():
     )
 
     isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
-    obs_dim = isaac_drive_env.observation_space.shape[0]
+    # obs_dim = isaac_drive_env.observation_space.shape[0]
     # agent = Agent(obs_dim=obs_dim)
-    agent = AgentAcceleration(obs_dim=obs_dim)
+    agent = AgentAcceleration()  # obs_dim=obs_dim
     # agent = AgentVehicleDynamic(obs_dim=obs_dim)
     if False:
         state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)

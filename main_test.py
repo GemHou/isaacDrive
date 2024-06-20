@@ -12,9 +12,9 @@ RENDER_FLAG = True
 TRAIN_TEST_MODE = "Test"  # Train Test
 
 
-def prepare_agent(obs_dim):
+def prepare_agent():
     # agent = Agent(obs_dim=obs_dim)
-    agent = AgentAcceleration(obs_dim=obs_dim)
+    agent = AgentAcceleration()
     # agent = AgentVehicleDynamic(obs_dim=obs_dim)
     state_dict = torch.load("data/interim/state_dict_grad.pt", map_location=DEVICE)
     agent.load_state_dict(state_dict)
@@ -49,7 +49,7 @@ def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
 
     # prepare agent
-    agent = prepare_agent(obs_dim=isaac_drive_env.observation_space.shape[0])
+    agent = prepare_agent()
 
     for _ in tqdm.tqdm(range(500)):
         sim_one_epoch(isaac_drive_env, agent)
