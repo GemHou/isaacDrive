@@ -33,17 +33,18 @@ class AgentVehicleDynamic(nn.Module):
         super(AgentVehicleDynamic, self).__init__()
         self.fc_first = nn.Linear(obs_dim, 64)  # , dtype=torch.float
         self.fc_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
-        # self.fc_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
-        # self.fc_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
+        self.fc_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
+        self.fc_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
         self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
         self.fc_2_1 = nn.Linear(202-198, 64)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
-        self.turning_radis_mech = 30
+        self.turning_radis_mech = 2.5  # 5
+        self.friction = 2.0  # 0.9
 
     def calc_vehicle_dynamic(self, action_throttleWheel, tensor_batch_speed, tensor_batch_yaw):
-        tensor_batch_acceleration = action_throttleWheel[:, 0] * 9.81 * 0.3
+        tensor_batch_acceleration = action_throttleWheel[:, 0] * 9.81 * self.friction
         tensor_batch_speed_new = tensor_batch_speed + tensor_batch_acceleration * 0.1
         tensor_batch_speed_new = torch.max(tensor_batch_speed_new, torch.ones_like(tensor_batch_speed_new) * 0.01)
 
@@ -71,10 +72,10 @@ class AgentVehicleDynamic(nn.Module):
         x1 = self.tanh(x1)
         x1 = self.fc_hid1(x1)
         x1 = self.tanh(x1)
-        # x1 = self.fc_hid2(x1)
-        # x1 = self.tanh(x1)
-        # x1 = self.fc_hid3(x1)
-        # x1 = self.tanh(x1)
+        x1 = self.fc_hid2(x1)
+        x1 = self.tanh(x1)
+        x1 = self.fc_hid3(x1)
+        x1 = self.tanh(x1)
 
         x2 = self.fc_2_1(x[:, 0:202-198])  # [B, 64]
 
