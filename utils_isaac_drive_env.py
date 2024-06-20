@@ -118,7 +118,7 @@ class IsaacDriveEnv:
             [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
             device=self.device, dtype=torch.float)  # [B, 2]
         tensor_batch_obs_other = self.tensor_batch_oneTime_other_pos_start_relaSim  # [B, 99, 2]
-        # tensor_batch_obs_other = tensor_batch_obs_other[:, torch.randperm(tensor_batch_obs_other.size(1)), :]
+        tensor_batch_obs_other = tensor_batch_obs_other[:, torch.randperm(tensor_batch_obs_other.size(1)), :]
         # tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]
         # tensor_batch_obs_other = tensor_batch_obs_other[:, 49:, :]
         tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99 * 2)
