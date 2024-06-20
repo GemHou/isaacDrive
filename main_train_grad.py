@@ -5,7 +5,7 @@ import torch
 import torch.optim as optim
 # from matplotlib import pyplot as plt
 
-from utils_agent import Agent, AgentVehicleDynamic
+from utils_agent import Agent, AgentAcceleration, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
 torch.autograd.set_detect_anomaly(True)
@@ -15,8 +15,8 @@ RENDER_FLAG = True
 SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
-RESUME_NAME = "20240619_5900X_grad_s100b90_obs202_r0802_layer5_lr00005_vehicleDynamic"  # 5700U 5900X 2070S
-NUM_EPOCH = 2000
+RESUME_NAME = "20240620_5900X_grad_s100b90_obs202_r0802_layer3_lr00005_acceleration_4"  # 5700U 5900X 2070S
+NUM_EPOCH = 500
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
@@ -88,9 +88,11 @@ def main():
     isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
     obs_dim = isaac_drive_env.observation_space.shape[0]
     # agent = Agent(obs_dim=obs_dim)
-    agent = AgentVehicleDynamic(obs_dim=obs_dim)
-    # state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
-    # agent.load_state_dict(state_dict)
+    agent = AgentAcceleration(obs_dim=obs_dim)
+    # agent = AgentVehicleDynamic(obs_dim=obs_dim)
+    if False:
+        state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
+        agent.load_state_dict(state_dict)
     agent.to(DEVICE)
     lr = 0.0005
     num_epoch = NUM_EPOCH

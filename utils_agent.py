@@ -28,6 +28,50 @@ class Agent(nn.Module):
         return action_deltaPosXy
 
 
+class AgentAcceleration(nn.Module):
+    def __init__(self, obs_dim):
+        super(AgentAcceleration, self).__init__()
+        self.fc_first = nn.Linear(obs_dim, 64)  # , dtype=torch.float
+        self.fc_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
+        # self.fc_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
+        # self.fc_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
+        self.fc_last = nn.Linear(64, 2)  # , dtype=torch.float
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
+
+        self.friction = 1.0  #
+
+    def forward(self, x):
+        tensor_batch_speed = x[:, 0]
+        tensor_batch_yaw = x[:, 1]
+
+        x = self.fc_first(x)
+        x = self.tanh(x)
+        x = self.fc_hid1(x)
+        x = self.tanh(x)
+        # x = self.fc_hid2(x)
+        # x = self.tanh(x)
+        # x = self.fc_hid3(x)
+        # x = self.tanh(x)
+        x = self.fc_last(x)  # [B, 2]
+        x = self.tanh(x)  # [B, 2] -1~1
+        action_accelerationXy = x * 9.81 * self.friction  # -10 ～ 10
+
+        tensor_batch_speedX = tensor_batch_speed * torch.cos(tensor_batch_yaw)
+        tensor_batch_speedY = tensor_batch_speed * torch.sin(tensor_batch_yaw)
+
+        tensor_batch_speedX_new = tensor_batch_speedX + action_accelerationXy[:, 0] * 0.1
+        tensor_batch_speedY_new = tensor_batch_speedY + action_accelerationXy[:, 1] * 0.1
+
+        tensor_batch_deltaPosX_new = tensor_batch_speedX_new * 0.1
+        tensor_batch_deltaPosY_new = tensor_batch_speedY_new * 0.1
+
+        action_deltaPosXy = torch.stack([tensor_batch_deltaPosX_new, tensor_batch_deltaPosY_new], dim=1)
+
+        # action_deltaPosXy = None  # [B, 2]
+        return action_deltaPosXy
+
+
 class AgentVehicleDynamic(nn.Module):
     def __init__(self, obs_dim):
         super(AgentVehicleDynamic, self).__init__()

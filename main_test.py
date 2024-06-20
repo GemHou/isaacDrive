@@ -2,19 +2,20 @@ import time
 import tqdm
 import torch
 
-from utils_agent import Agent, AgentVehicleDynamic
+from utils_agent import Agent, AgentAcceleration, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 SCENE_NUM = 100
 BATCH_NUM = 1
 RENDER_FLAG = True
-TRAIN_TEST_MODE = "Train"  # Train Test
+TRAIN_TEST_MODE = "Test"  # Train Test
 
 
 def prepare_agent(obs_dim):
     # agent = Agent(obs_dim=obs_dim)
-    agent = AgentVehicleDynamic(obs_dim=obs_dim)
+    agent = AgentAcceleration(obs_dim=obs_dim)
+    # agent = AgentVehicleDynamic(obs_dim=obs_dim)
     state_dict = torch.load("data/interim/state_dict_grad.pt", map_location=DEVICE)
     agent.load_state_dict(state_dict)
     return agent
