@@ -31,14 +31,19 @@ class Agent(nn.Module):
 class AgentAcceleration(nn.Module):
     def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
-        self.fc_other_first = nn.Linear(198, 64)  # , dtype=torch.float
-        self.fc_other_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
-        # self.fc_other_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
-        # self.fc_other_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
+        if False:
+            self.fc_other_first = nn.Linear(198, 64)  # , dtype=torch.float
+            self.fc_other_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
+            # self.fc_other_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
+            # self.fc_other_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
 
-        self.fc_ego_first = nn.Linear(202 - 198, 64)
+            self.fc_ego_first = nn.Linear(202 - 198, 64)
 
-        self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
+            self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
+        else:
+            self.fc_first = nn.Linear(202, 64)  # , dtype=torch.float
+            self.fc_hid1 = nn.Linear(64, 64)  # , dtype=torch.float
+            self.fc_last = nn.Linear(64, 2)  # , dtype=torch.float
 
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
@@ -52,18 +57,25 @@ class AgentAcceleration(nn.Module):
         tensor_batch_speed = tensor_batch_ego[:, 0]
         tensor_batch_yaw = tensor_batch_ego[:, 1]
 
-        x_other = self.fc_other_first(tensor_batch_obs_other)
-        x_other = self.tanh(x_other)
-        x_other = self.fc_other_hid1(x_other)
-        x_other = self.tanh(x_other)
-        # x_other = self.fc_other_hid2(x_other)
-        # x_other = self.tanh(x_other)
-        # x_other = self.fc_other_hid3(x_other)
-        # x_other = self.tanh(x_other)
+        if False:
+            x_other = self.fc_other_first(tensor_batch_obs_other)
+            x_other = self.tanh(x_other)
+            x_other = self.fc_other_hid1(x_other)
+            x_other = self.tanh(x_other)
+            # x_other = self.fc_other_hid2(x_other)
+            # x_other = self.tanh(x_other)
+            # x_other = self.fc_other_hid3(x_other)
+            # x_other = self.tanh(x_other)
 
-        x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
+            x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
 
-        x = torch.cat((x_other, x_ego), dim=-1)
+            x = torch.cat((x_other, x_ego), dim=-1)
+        else:
+            x = torch.cat((tensor_batch_obs_other, tensor_batch_ego), dim=-1)
+            x = self.fc_first(x)
+            x = self.tanh(x)
+            x = self.fc_hid1(x)
+            x = self.tanh(x)
 
         x = self.fc_last(x)  # [B, 2]
         x = self.tanh(x)  # [B, 2] -1~1
