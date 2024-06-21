@@ -31,13 +31,19 @@ class Agent(nn.Module):
 class AgentAcceleration(nn.Module):
     def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
-        if True:
+
+        self.other_encoder = "Pool"  # FC Pool
+
+        if self.other_encoder == "FC":
             self.fc_other_first = nn.Linear(198, 64)
-        else:
+            self.fc_other_hid1 = nn.Linear(64, 64)
+        elif self.other_encoder == "Pool":
             self.fc_other_first = nn.Linear(2, 64)
+            self.fc_other_hid1 = nn.Linear(64, 64)
             self.fc_other_hid2 = nn.Linear(64, 64)
             self.fc_other_hid3 = nn.Linear(64, 64)
-        self.fc_other_hid1 = nn.Linear(64, 64)
+        else:
+            raise
 
         self.fc_ego_first = nn.Linear(202 - 198, 64)
         self.fc_ego_hid1 = nn.Linear(64, 64)
@@ -58,12 +64,12 @@ class AgentAcceleration(nn.Module):
         tensor_batch_speed = tensor_batch_ego[:, 0]
         tensor_batch_yaw = tensor_batch_ego[:, 1]
 
-        if True:
+        if self.other_encoder == "FC":
             tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 99 * 2)
             x_other = self.fc_other_first(tensor_batch_obs_other_flat)  # [B, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid1(x_other)  # [B, 64]
-        else:
+        elif self.other_encoder == "Pool":
             x_other = self.fc_other_first(tensor_batch_obs_other)  # [B, 99, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid1(x_other)  # [B, 99, 64]
@@ -73,7 +79,8 @@ class AgentAcceleration(nn.Module):
             x_other = self.fc_other_hid2(x_other)  # [B, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid3(x_other)  # [B, 64]
-
+        else:
+            raise
 
         x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
         x_ego = self.tanh(x_ego)
