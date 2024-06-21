@@ -121,7 +121,7 @@ class IsaacDriveEnv:
         tensor_batch_obs_other = tensor_batch_obs_other[:, torch.randperm(tensor_batch_obs_other.size(1)), :]
         # tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]
         # tensor_batch_obs_other = tensor_batch_obs_other[:, 49:, :]
-        tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99 * 2)
+        # tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99 * 2)
         tensor_batch_oneTime_sim_velocityX = torch.cos(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         tensor_batch_oneTime_sim_velocityY = torch.sin(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         if False:
