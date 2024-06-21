@@ -32,7 +32,7 @@ class AgentAcceleration(nn.Module):
     def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
 
-        self.other_encoder = "Pool"  # FC Pool
+        self.other_encoder = "FC"  # FC Pool
 
         if self.other_encoder == "FC":
             self.fc_other_first = nn.Linear(198, 64)
@@ -57,12 +57,20 @@ class AgentAcceleration(nn.Module):
 
         self.friction = 1.0  #
 
+        self.zero_params = nn.Parameter(torch.tensor(0.0))
+
     def forward(self, dict_tensor_batch_obs):
-        tensor_batch_obs_other = dict_tensor_batch_obs["tensor_batch_obs_other"]  #  [B, 99, 2]
+        tensor_batch_obs_other = dict_tensor_batch_obs["tensor_batch_obs_other"]  # [B, 99, 2]
         tensor_batch_ego = dict_tensor_batch_obs["tensor_batch_ego"]
         bs, _ = tensor_batch_ego.size()
         tensor_batch_speed = tensor_batch_ego[:, 0]
         tensor_batch_yaw = tensor_batch_ego[:, 1]
+
+        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0, self.zero_params.expand_as(tensor_batch_obs_other), tensor_batch_obs_other)
+
+        norm = torch.linalg.vector_norm(tensor_batch_obs_other, dim=2)
+        sorted_indices = torch.argsort(norm, dim=1)  # , descending=True
+        tensor_batch_obs_other = torch.gather(tensor_batch_obs_other, 1, sorted_indices.unsqueeze(-1).expand(-1, -1, 2))
 
         if self.other_encoder == "FC":
             tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 99 * 2)
@@ -118,7 +126,7 @@ class AgentVehicleDynamic(nn.Module):
         self.fc_other_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
         self.fc_other_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
 
-        self.fc_ego_first = nn.Linear(202-198, 64)
+        self.fc_ego_first = nn.Linear(202 - 198, 64)
 
         self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
 
