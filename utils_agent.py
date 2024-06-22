@@ -35,7 +35,7 @@ class AgentAcceleration(nn.Module):
         self.other_encoder = "FC"  # FC Pool
 
         if self.other_encoder == "FC":
-            self.fc_other_first = nn.Linear(198, 64)
+            self.fc_other_first = nn.Linear(100, 64)
             self.fc_other_hid1 = nn.Linear(64, 64)
         elif self.other_encoder == "Pool":
             self.fc_other_first = nn.Linear(2, 64)
@@ -66,14 +66,16 @@ class AgentAcceleration(nn.Module):
         tensor_batch_speed = tensor_batch_ego[:, 0]
         tensor_batch_yaw = tensor_batch_ego[:, 1]
 
-        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0, self.zero_params.expand_as(tensor_batch_obs_other), tensor_batch_obs_other)
+        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0, self.zero_params.expand_as(tensor_batch_obs_other), tensor_batch_obs_other)  # [B, 99, 2]
 
         norm = torch.linalg.vector_norm(tensor_batch_obs_other, dim=2)
         sorted_indices = torch.argsort(norm, dim=1)  # , descending=True
-        tensor_batch_obs_other = torch.gather(tensor_batch_obs_other, 1, sorted_indices.unsqueeze(-1).expand(-1, -1, 2))
+        tensor_batch_obs_other = torch.gather(tensor_batch_obs_other, 1, sorted_indices.unsqueeze(-1).expand(-1, -1, 2))  # [B, 99, 2]
+
+        tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]  # [B, 50, 2]
 
         if self.other_encoder == "FC":
-            tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 99 * 2)
+            tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 50 * 2)
             x_other = self.fc_other_first(tensor_batch_obs_other_flat)  # [B, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid1(x_other)  # [B, 64]

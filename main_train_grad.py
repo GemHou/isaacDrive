@@ -15,8 +15,8 @@ RENDER_FLAG = True
 SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
-RESUME_NAME = "20240621_5900X_grad_s100b90_obs202_r0802_layer3_lr00005_acceleration_randObs_sort"  # 5700U 5900X 2070S
-NUM_EPOCH = 500
+RESUME_NAME = "20240621_5700U_grad_s100b90_obs202_r0802_layer3_lr00005_acceleration_randObs_sort_6"  # 5700U 5900X 2070S
+NUM_EPOCH = 100
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
