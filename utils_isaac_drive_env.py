@@ -122,6 +122,16 @@ class IsaacDriveEnv:
         # tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]
         # tensor_batch_obs_other = tensor_batch_obs_other[:, 49:, :]
         # tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99 * 2)
+
+        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0,
+                                                  torch.tensor(9999.0).expand_as(tensor_batch_obs_other),
+                                                  tensor_batch_obs_other)  # [B, 99, 2]
+        norm = torch.linalg.vector_norm(tensor_batch_obs_other, dim=2)
+        sorted_indices = torch.argsort(norm, dim=1)  # , descending=True
+        tensor_batch_obs_other = torch.gather(tensor_batch_obs_other, 1,
+                                                   sorted_indices.unsqueeze(-1).expand(-1, -1, 2))  # [B, 99, 2]
+        tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]  # [B, 50, 2]
+
         tensor_batch_oneTime_sim_velocityX = torch.cos(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         tensor_batch_oneTime_sim_velocityY = torch.sin(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         if False:
