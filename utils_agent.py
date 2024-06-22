@@ -32,7 +32,7 @@ class AgentAcceleration(nn.Module):
     def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
 
-        self.other_encoder = "FC"  # FC Pool
+        self.other_encoder = "Pool"  # FC Pool  # both is okay, but Pool is slower and worse
 
         if self.other_encoder == "FC":
             self.fc_other_first = nn.Linear(100, 64)
@@ -45,7 +45,7 @@ class AgentAcceleration(nn.Module):
         else:
             raise
 
-        self.fc_ego_first = nn.Linear(202 - 198, 64)
+        self.fc_ego_first = nn.Linear(4, 64)
         self.fc_ego_hid1 = nn.Linear(64, 64)
 
         self.fc_first = nn.Linear(64 + 64, 64)
@@ -124,7 +124,7 @@ class AgentVehicleDynamic(nn.Module):
         self.fc_other_hid2 = nn.Linear(64, 64)  # , dtype=torch.float
         self.fc_other_hid3 = nn.Linear(64, 64)  # , dtype=torch.float
 
-        self.fc_ego_first = nn.Linear(202 - 198, 64)
+        self.fc_ego_first = nn.Linear(4, 64)
 
         self.fc_last = nn.Linear(64 + 64, 2)  # , dtype=torch.float
 
