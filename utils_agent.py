@@ -32,10 +32,10 @@ class AgentAcceleration(nn.Module):
     def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
 
-        self.other_encoder = "Pool"  # FC Pool  # both is okay, but Pool is slower and worse
+        self.other_encoder = "FC"  # FC Pool  # both is okay, but Pool is slower and worse
 
         if self.other_encoder == "FC":
-            self.fc_other_first = nn.Linear(100, 64)
+            self.fc_other_first = nn.Linear(50*4, 64)
             self.fc_other_hid1 = nn.Linear(64, 64)
         elif self.other_encoder == "Pool":
             self.fc_other_first = nn.Linear(4, 64)
@@ -71,7 +71,7 @@ class AgentAcceleration(nn.Module):
         #                                      tensor_batch_obs_other)
 
         if self.other_encoder == "FC":
-            tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 50 * 2)
+            tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 50 * 4)
             x_other = self.fc_other_first(tensor_batch_obs_other_flat)  # [B, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid1(x_other)  # [B, 64]
