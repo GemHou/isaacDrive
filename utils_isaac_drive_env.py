@@ -184,8 +184,9 @@ class IsaacDriveEnv:
             self.selected_scene_indexes]  # [B, 254, 10, 2]
 
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart = torch.zeros(self.batch_num, 2,
-                                                                         device=self.device)  # [B, 2]
+        zero_1 = torch.zeros(self.batch_num, 2, device=self.device) * 0  # [B, 2]
+        zero_2 = torch.ones(self.batch_num, 2, device=self.device) * 0  # [B, 2]
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = zero_1
 
         # tensor_batch_obs = torch.tensor(
         #     [[[self.selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
@@ -194,7 +195,7 @@ class IsaacDriveEnv:
         self.timestep = 0
 
         self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
-        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo
+        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaStart.unsqueeze(1).repeat_interleave(99, dim=1)
 
         self.tensor_batch_oneTime_ego_velocity = self.tensor_batch_vectornet_object_feature[:, self.timestep, 0, 0, 4:6]  # [B, 2]
         # self.tensor_batch_oneTime_ego_yaw_arctan2 = torch.arctan2(self.tensor_batch_oneTime_ego_velocity[:, 1], self.tensor_batch_oneTime_ego_velocity[:, 0])  # not accurate
