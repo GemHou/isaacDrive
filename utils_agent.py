@@ -38,7 +38,7 @@ class AgentAcceleration(nn.Module):
             self.fc_other_first = nn.Linear(100, 64)
             self.fc_other_hid1 = nn.Linear(64, 64)
         elif self.other_encoder == "Pool":
-            self.fc_other_first = nn.Linear(2, 64)
+            self.fc_other_first = nn.Linear(4, 64)
             self.fc_other_hid1 = nn.Linear(64, 64)
             self.fc_other_hid2 = nn.Linear(64, 64)
             self.fc_other_hid3 = nn.Linear(64, 64)

@@ -106,7 +106,7 @@ class IsaacDriveEnv:
          self.tensor_all_ego_gt_traj_hist,  # [10, 254, 10, 2]
          tensor_all_ego_gt_traj_long,  # [10, 254, 60, 2]
          self.tensor_all_vectornet_object_feature,  # [10, 254, 100, 16, 11]
-         tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
+         self.tensor_all_vectornet_object_mask,  # [10, 254, 100, 16]
          tensor_all_vectornet_static_feature) = (self.trans_npz_to_tensor(list_npz_data))  # [10, 254, 80, 16, 6]
 
         # self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(202,))
@@ -114,20 +114,26 @@ class IsaacDriveEnv:
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
     def sort_dis(self, tensor_batch_obs_other):
-        norm = torch.linalg.vector_norm(tensor_batch_obs_other, dim=2)
+        norm = torch.linalg.vector_norm(tensor_batch_obs_other[:, :, 0:2], dim=2)
         sorted_indices = torch.argsort(norm, dim=1)  # , descending=True
         tensor_batch_obs_other = torch.gather(tensor_batch_obs_other, 1,
-                                              sorted_indices.unsqueeze(-1).expand(-1, -1, 2))  # [B, 99, 2]
+                                              sorted_indices.unsqueeze(-1).expand(-1, -1, 4))  # [B, 99, 2]
         return tensor_batch_obs_other
 
     def obs_other(self):
-        tensor_batch_obs_other = self.tensor_batch_oneTime_other_pos_start_relaSim  # [B, 99, 2]
+        tensor_batch_obs_other_pos = self.tensor_batch_oneTime_other_pos_start_relaSim  # [B, 99, 2]
+        tensor_batch_obs_other_vel = self.tensor_batch_oneTime_other_vel  # [B, 99, 2]
+        tensor_batch_obs_other_mask = self.tensor_batch_oneTime_other_mask  # [B, 99]
+        tensor_batch_obs_other = torch.cat([tensor_batch_obs_other_pos, tensor_batch_obs_other_vel],
+                                           dim=2)  # [B, 99, 4]
+        replace_index = tensor_batch_obs_other_mask.unsqueeze(-1).repeat_interleave(4, dim=-1) == 0
+        tensor_batch_obs_other = torch.where(
+            replace_index,
+            torch.tensor(9999.0).expand_as(tensor_batch_obs_other),
+            tensor_batch_obs_other)  # [B, 99, 4]
         tensor_batch_obs_other = tensor_batch_obs_other[:, torch.randperm(tensor_batch_obs_other.size(1)), :]
-        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0,
-                                             torch.tensor(9999.0).expand_as(tensor_batch_obs_other),
-                                             tensor_batch_obs_other)  # [B, 99, 2]
         tensor_batch_obs_other = self.sort_dis(tensor_batch_obs_other)
-        tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]  # [B, 50, 2]
+        tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]  # [B, 50, 4]
         return tensor_batch_obs_other
 
     def obs_ego(self):
@@ -173,6 +179,8 @@ class IsaacDriveEnv:
         # print("self.selected_scene_indexes: ", self.selected_scene_indexes)
         self.tensor_batch_vectornet_object_feature = self.tensor_all_vectornet_object_feature[
             self.selected_scene_indexes]  # [B, 254, 100, 16, 11]
+        self.tensor_batch_vectornet_object_mask = self.tensor_all_vectornet_object_mask[
+            self.selected_scene_indexes]  # [B, 254, 100, 16]
         self.tensor_batch_ego_gt_traj_hist = self.tensor_all_ego_gt_traj_hist[
             self.selected_scene_indexes]  # [B, 254, 10, 2]
 
@@ -188,13 +196,20 @@ class IsaacDriveEnv:
         #     dtype=torch.float)  # [20, 254, 2]
         self.timestep = 0
 
-        self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 0:2]
-        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaStart.unsqueeze(1).repeat_interleave(99, dim=1)
+        self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep,
+                                                            1:, 0, 0:2]
+        self.tensor_batch_oneTime_other_pos_start_relaSim = self.tensor_batch_oneTime_other_pos_start_relaEgo - self.tensor_batch_oneTime_sim_posXYStart_relaStart.unsqueeze(
+            1).repeat_interleave(99, dim=1)
+        self.tensor_batch_oneTime_other_vel = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 4:6]
+        self.tensor_batch_oneTime_other_mask = self.tensor_batch_vectornet_object_mask[:, self.timestep, 1:,
+                                               0]  # [B, 254, 100, 16] -> [B, 99]
 
-        self.tensor_batch_oneTime_ego_velocity = self.tensor_batch_vectornet_object_feature[:, self.timestep, 0, 0, 4:6]  # [B, 2]
+        self.tensor_batch_oneTime_ego_velocity = self.tensor_batch_vectornet_object_feature[:, self.timestep, 0, 0,
+                                                 4:6]  # [B, 2]
         # self.tensor_batch_oneTime_ego_yaw_arctan2 = torch.arctan2(self.tensor_batch_oneTime_ego_velocity[:, 1], self.tensor_batch_oneTime_ego_velocity[:, 0])  # not accurate
         self.tensor_batch_oneTime_ego_speed = torch.norm(self.tensor_batch_oneTime_ego_velocity, dim=-1)  # [B]
-        self.tensor_batch_oneTime_ego_yaw = self.tensor_batch_vectornet_object_feature[:, self.timestep, 0, 0, 10]  # [B]
+        self.tensor_batch_oneTime_ego_yaw = self.tensor_batch_vectornet_object_feature[:, self.timestep, 0, 0,
+                                            10]  # [B]
 
         self.tensor_batch_oneTime_sim_speed = self.tensor_batch_oneTime_ego_speed
         self.tensor_batch_oneTime_sim_yaw = self.tensor_batch_oneTime_ego_yaw
@@ -211,6 +226,8 @@ class IsaacDriveEnv:
     def step_main_other_pos(self):
         self.tensor_batch_oneTime_other_pos_start_relaEgo = self.tensor_batch_vectornet_object_feature[:, self.timestep,
                                                             1:, 0, 0:2]
+        self.tensor_batch_oneTime_other_vel = self.tensor_batch_vectornet_object_feature[:, self.timestep, 1:, 0, 4:6]
+        self.tensor_batch_oneTime_other_mask = self.tensor_batch_vectornet_object_mask[:, self.timestep, 1:, 0]
         tensor_cpu_oneTime_other_pos_start_relaEgo = self.tensor_batch_oneTime_other_pos_start_relaEgo.cpu()  # [B, 99, 2]
         self.tensor_cpu_oneTime_other_pos_start_relaStart = tensor_cpu_oneTime_other_pos_start_relaEgo + \
                                                             self.tensor_batch_oneTime_ego_posXYStart_relaStart.cpu().detach().unsqueeze(
@@ -251,7 +268,8 @@ class IsaacDriveEnv:
             1).repeat_interleave(99, dim=1)  # [B, 99, 2]
 
         self.tensor_batch_oneTime_sim_speed = torch.norm(self.tensor_batch_oneTime_action_deltaPosXy, dim=-1) / 0.1
-        self.tensor_batch_oneTime_sim_yaw = torch.arctan2(self.tensor_batch_oneTime_action_deltaPosXy[:, 1], self.tensor_batch_oneTime_action_deltaPosXy[:, 0])
+        self.tensor_batch_oneTime_sim_yaw = torch.arctan2(self.tensor_batch_oneTime_action_deltaPosXy[:, 1],
+                                                          self.tensor_batch_oneTime_action_deltaPosXy[:, 0])
 
     def step_main(self):
         self.timestep += 1

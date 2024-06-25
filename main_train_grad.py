@@ -15,7 +15,7 @@ RENDER_FLAG = True
 SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
-RESUME_NAME = "20240625_5900X_grad_s2b1_obs202_lr00005_acceleration_randObs_sort_resetRandom2"  # 5700U 5900X 2070S
+RESUME_NAME = "20240625_5900X_grad_s2b1_obs202_lr00005_acceleration_randObs_sort_resetRandom2_removeCheat"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
 
 
