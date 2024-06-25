@@ -15,7 +15,7 @@ RENDER_FLAG = True
 SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
-RESUME_NAME = "20240624_5900X_grad_s2b1_obs202_lr00005_acceleration_randObs_sort_19"  # 5700U 5900X 2070S
+RESUME_NAME = "20240625_5900X_grad_s2b1_obs202_lr00005_acceleration_randObs_sort_resetRandom2"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
 
 
@@ -33,7 +33,7 @@ def epoch_train(agent, isaac_drive_env, optimizer):
             tensor_batch_action_xy = torch.randn(TRAIN_BATCH_NUM, 2, device=DEVICE)  # [B, 2]
 
         reward, done, tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_action_xy)
-        tensor_time_loss = - reward
+        tensor_time_loss = info["loss"]
         list_tensor_time_loss.append(tensor_time_loss)
         list_tensor_time_reward_gt.append(info["reward_gt_norm"])
         list_tensor_time_reward_safe.append(info["reward_safe_norm"])
@@ -43,10 +43,10 @@ def epoch_train(agent, isaac_drive_env, optimizer):
     tensor_epoch_reward_gt = torch.stack(list_tensor_time_reward_gt, dim=1)
     tensor_epoch_reward_safe = torch.stack(list_tensor_time_reward_safe, dim=1)
     loss_final = tensor_epoch_loss.mean(dim=-1).mean()
-    reward_per_step = -loss_final.item()
+    loss_per_step = loss_final.item()
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
-    wandb.log({"train/reward_per_step": reward_per_step})
+    wandb.log({"train/loss_per_step": loss_per_step})
     wandb.log({"train/reward_per_step_gt": reward_gt})
     wandb.log({"train/reward_per_step_safe": reward_safe})
     loss_final.backward()
@@ -61,7 +61,7 @@ def epoch_test(agent, isaac_drive_env):
     while True:
         tensor_batch_action_xy = agent(dict_tensor_batch_obs)  # [B, 2]
         reward, done, dict_tensor_batch_obs, info = isaac_drive_env.step(tensor_batch_action_xy)
-        tensor_time_loss = - reward
+        tensor_time_loss = info["loss"]
         list_tensor_time_loss.append(tensor_time_loss)
         list_tensor_time_reward_gt.append(info["reward_gt_norm"])
         list_tensor_time_reward_safe.append(info["reward_safe_norm"])
@@ -71,10 +71,10 @@ def epoch_test(agent, isaac_drive_env):
     tensor_epoch_reward_gt = torch.stack(list_tensor_time_reward_gt, dim=1)
     tensor_epoch_reward_safe = torch.stack(list_tensor_time_reward_safe, dim=1)
     loss_final = tensor_epoch_loss.mean(dim=-1).mean()
-    reward_per_step = -loss_final.item()
+    loss_per_step = loss_final.item()
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
-    wandb.log({"test/reward_per_step": reward_per_step})
+    wandb.log({"test/loss_per_step": loss_per_step})
     wandb.log({"test/reward_per_step_gt": reward_gt})
     wandb.log({"test/reward_per_step_safe": reward_safe})
 

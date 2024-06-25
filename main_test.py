@@ -52,6 +52,8 @@ def main():
     agent = prepare_agent()
 
     for _ in tqdm.tqdm(range(500)):
+        state_dict = torch.load("data/interim/state_dict_grad.pt", map_location=DEVICE)
+        agent.load_state_dict(state_dict)
         sim_one_epoch(isaac_drive_env, agent)
 
     print("all time: ", time.time() - start_time)

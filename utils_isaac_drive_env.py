@@ -186,7 +186,8 @@ class IsaacDriveEnv:
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)
         zero_1 = torch.zeros(self.batch_num, 2, device=self.device) * 0  # [B, 2]
         zero_2 = torch.ones(self.batch_num, 2, device=self.device) * 0  # [B, 2]
-        self.tensor_batch_oneTime_sim_posXYStart_relaStart = zero_1
+        random_v = torch.rand(self.batch_num, 2, device=self.device) * 2  # [B, 2]
+        self.tensor_batch_oneTime_sim_posXYStart_relaStart = random_v
 
         # tensor_batch_obs = torch.tensor(
         #     [[[self.selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
@@ -294,7 +295,8 @@ class IsaacDriveEnv:
         # calc self.reward
         # calc dis with action
         self.calc_dis()
-        reward_gt = - torch.norm(self.tensor_batch_oneTime_sim_posXYStart_relaEgo, dim=-1)  # [B, 2] -inf~0
+        dis_gt = torch.norm(self.tensor_batch_oneTime_sim_posXYStart_relaEgo, dim=-1)
+        reward_gt = - dis_gt  # [B, 2] -inf~0
         reward_gt = torch.max(reward_gt, torch.ones_like(reward_gt) * -100)  # [B, 2] -100~0
         K_gt = 0.5  # bigger harder
         reward_gt_norm = 1 / (torch.exp(-K_gt * reward_gt))  # 0～1
@@ -302,8 +304,10 @@ class IsaacDriveEnv:
         K_safe = 0.1
         reward_safe_norm = 1 - torch.exp(-K_safe * reward_safe)
         self.reward = reward_gt_norm * W_gt + reward_safe_norm * W_safe
+        loss = torch.square(dis_gt) * W_gt
         reward_info = {"reward_gt_norm": reward_gt_norm.detach(),
                        "reward_safe_norm": reward_safe_norm.detach(),
+                       "loss": loss,
                        }
         return reward_info
 
