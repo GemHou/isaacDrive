@@ -45,8 +45,10 @@ class AgentAcceleration(nn.Module):
         else:
             raise
 
-        self.fc_ego_first = nn.Linear(4, 64)
+        self.fc_ego_first = nn.Linear(6, 64)
         self.fc_ego_hid1 = nn.Linear(64, 64)
+        self.fc_ego_hid2 = nn.Linear(64, 64)
+        self.fc_ego_hid3 = nn.Linear(64, 64)
 
         self.fc_first = nn.Linear(64 + 64, 64)
         self.fc_last = nn.Linear(64, 2)
@@ -91,8 +93,12 @@ class AgentAcceleration(nn.Module):
         x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
         x_ego = self.tanh(x_ego)
         x_ego = self.fc_ego_hid1(x_ego)  # [B, 64]
+        x_ego = self.tanh(x_ego)
+        x_ego = self.fc_ego_hid2(x_ego)  # [B, 64]
+        x_ego = self.tanh(x_ego)
+        x_ego = self.fc_ego_hid3(x_ego)  # [B, 64]
 
-        x = torch.cat((x_other, x_ego), dim=-1)
+        x = torch.cat((x_ego, x_ego), dim=-1)
         x = self.fc_first(x)  # [B, 64]
 
         x = self.tanh(x)

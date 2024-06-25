@@ -141,12 +141,14 @@ class IsaacDriveEnv:
             self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         tensor_batch_oneTime_sim_velocityY = torch.sin(
             self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
+        # self.tensor_batch_oneTime_sim_posXYStart_relaEgo  # [B, 2]
         tensor_batch_ego = torch.cat([
             self.tensor_batch_oneTime_sim_speed.unsqueeze(1),  # [B, 1]
             self.tensor_batch_oneTime_sim_yaw.unsqueeze(1),  # [B, 1]
             tensor_batch_oneTime_sim_velocityX.unsqueeze(1),  # [B, 1]
             tensor_batch_oneTime_sim_velocityY.unsqueeze(1),  # [B, 1]
-        ], dim=1)  # [B, 4]
+            self.tensor_batch_oneTime_sim_posXYStart_relaEgo,  # [B, 2]  # cheat!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ], dim=1)  # [B, 6]
         return tensor_batch_ego
 
     def observe_once(self):
@@ -189,6 +191,7 @@ class IsaacDriveEnv:
         zero_2 = torch.ones(self.batch_num, 2, device=self.device) * 0  # [B, 2]
         random_v = torch.rand(self.batch_num, 2, device=self.device) * 2  # [B, 2]
         self.tensor_batch_oneTime_sim_posXYStart_relaStart = random_v
+        self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
 
         # tensor_batch_obs = torch.tensor(
         #     [[[self.selected_scene_indexes[x], y] for y in range(254)] for x in range(self.batch_num)],
