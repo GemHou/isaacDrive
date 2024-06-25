@@ -113,52 +113,45 @@ class IsaacDriveEnv:
         self.observation_space = "Dict"
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
-    def observe_once(self):
-        tensor_batch_obs_st = torch.tensor(
-            [[self.selected_scene_indexes[x], self.timestep] for x in range(self.batch_num)],
-            device=self.device, dtype=torch.float)  # [B, 2]
-        tensor_batch_obs_other = self.tensor_batch_oneTime_other_pos_start_relaSim  # [B, 99, 2]
-        tensor_batch_obs_other = tensor_batch_obs_other[:, torch.randperm(tensor_batch_obs_other.size(1)), :]
-        # tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]
-        # tensor_batch_obs_other = tensor_batch_obs_other[:, 49:, :]
-        # tensor_batch_obs_other = tensor_batch_obs_other.reshape(-1, 99 * 2)
-
-        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0,
-                                                  torch.tensor(9999.0).expand_as(tensor_batch_obs_other),
-                                                  tensor_batch_obs_other)  # [B, 99, 2]
+    def sort_dis(self, tensor_batch_obs_other):
         norm = torch.linalg.vector_norm(tensor_batch_obs_other, dim=2)
         sorted_indices = torch.argsort(norm, dim=1)  # , descending=True
         tensor_batch_obs_other = torch.gather(tensor_batch_obs_other, 1,
-                                                   sorted_indices.unsqueeze(-1).expand(-1, -1, 2))  # [B, 99, 2]
-        tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]  # [B, 50, 2]
+                                              sorted_indices.unsqueeze(-1).expand(-1, -1, 2))  # [B, 99, 2]
+        return tensor_batch_obs_other
 
-        tensor_batch_oneTime_sim_velocityX = torch.cos(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
-        tensor_batch_oneTime_sim_velocityY = torch.sin(self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
-        if False:
-            tensor_batch_obs = torch.cat([
-                self.tensor_batch_oneTime_sim_speed.unsqueeze(1),  # [B, 1]
-                self.tensor_batch_oneTime_sim_yaw.unsqueeze(1),  # [B, 1]
-                # tensor_batch_obs_st,  # [B, 2]
-                # self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # [B, 2]
-                # self.tensor_batch_oneTime_ego_posXYStart_relaStart,  # [B, 2]
-                # self.tensor_batch_oneTime_ego_posXYStart_relaStart - self.tensor_batch_oneTime_sim_posXYStart_relaStart,  # [B, 2]
-                tensor_batch_oneTime_sim_velocityX.unsqueeze(1),
-                tensor_batch_oneTime_sim_velocityY.unsqueeze(1),
-                tensor_batch_obs_other,  # [B, 198]
-            ], dim=1)  # [B, 8]
-            return tensor_batch_obs.detach()
+    def obs_other(self):
+        tensor_batch_obs_other = self.tensor_batch_oneTime_other_pos_start_relaSim  # [B, 99, 2]
+        tensor_batch_obs_other = tensor_batch_obs_other[:, torch.randperm(tensor_batch_obs_other.size(1)), :]
+        tensor_batch_obs_other = torch.where(tensor_batch_obs_other == 0,
+                                             torch.tensor(9999.0).expand_as(tensor_batch_obs_other),
+                                             tensor_batch_obs_other)  # [B, 99, 2]
+        tensor_batch_obs_other = self.sort_dis(tensor_batch_obs_other)
+        tensor_batch_obs_other = tensor_batch_obs_other[:, :50, :]  # [B, 50, 2]
+        return tensor_batch_obs_other
+
+    def obs_ego(self):
+        tensor_batch_oneTime_sim_velocityX = torch.cos(
+            self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
+        tensor_batch_oneTime_sim_velocityY = torch.sin(
+            self.tensor_batch_oneTime_sim_yaw) * self.tensor_batch_oneTime_sim_speed
         tensor_batch_ego = torch.cat([
             self.tensor_batch_oneTime_sim_speed.unsqueeze(1),  # [B, 1]
             self.tensor_batch_oneTime_sim_yaw.unsqueeze(1),  # [B, 1]
             tensor_batch_oneTime_sim_velocityX.unsqueeze(1),  # [B, 1]
             tensor_batch_oneTime_sim_velocityY.unsqueeze(1),  # [B, 1]
         ], dim=1)  # [B, 4]
+        return tensor_batch_ego
+
+    def observe_once(self):
+        tensor_batch_obs_other = self.obs_other()
+
+        tensor_batch_ego = self.obs_ego()
         dict_tensor_batch_obs = {
             "tensor_batch_obs_other": tensor_batch_obs_other,
             "tensor_batch_ego": tensor_batch_ego,
         }
         return dict_tensor_batch_obs
-
 
     def reset(self, batch_num, mode="Train"):
         self.batch_num = batch_num
