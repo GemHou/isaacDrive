@@ -45,12 +45,17 @@ class AgentAcceleration(nn.Module):
         else:
             raise
 
-        self.fc_ego_first = nn.Linear(6, 64)
+        self.fc_ego_first = nn.Linear(4, 64)
         self.fc_ego_hid1 = nn.Linear(64, 64)
         self.fc_ego_hid2 = nn.Linear(64, 64)
         self.fc_ego_hid3 = nn.Linear(64, 64)
 
-        self.fc_first = nn.Linear(64 + 64, 64)
+        self.fc_cheat_first = nn.Linear(2, 64)
+        self.fc_cheat_hid1 = nn.Linear(64, 64)
+        self.fc_cheat_hid2 = nn.Linear(64, 64)
+        self.fc_cheat_hid3 = nn.Linear(64, 64)
+
+        self.fc_first = nn.Linear(64 + 64 + 64, 64)
         self.fc_last = nn.Linear(64, 2)
 
         self.relu = nn.ReLU()
@@ -63,7 +68,8 @@ class AgentAcceleration(nn.Module):
 
     def forward(self, dict_tensor_batch_obs):
         tensor_batch_obs_other = dict_tensor_batch_obs["tensor_batch_obs_other"]  # [B, 99, 2]
-        tensor_batch_ego = dict_tensor_batch_obs["tensor_batch_ego"]
+        tensor_batch_ego = dict_tensor_batch_obs["tensor_batch_ego"]  # [B, 4]
+        tensor_batch_cheat = dict_tensor_batch_obs["tensor_batch_cheat"]  # [B, 2]
         bs, _ = tensor_batch_ego.size()
         tensor_batch_speed = tensor_batch_ego[:, 0]
         tensor_batch_yaw = tensor_batch_ego[:, 1]
@@ -98,7 +104,15 @@ class AgentAcceleration(nn.Module):
         x_ego = self.tanh(x_ego)
         x_ego = self.fc_ego_hid3(x_ego)  # [B, 64]
 
-        x = torch.cat((x_ego, x_ego), dim=-1)
+        x_cheat = self.fc_cheat_first(tensor_batch_cheat)  # [B, 64]
+        x_cheat = self.tanh(x_cheat)
+        x_cheat = self.fc_cheat_hid1(x_cheat)  # [B, 64]
+        x_cheat = self.tanh(x_cheat)
+        x_cheat = self.fc_cheat_hid2(x_cheat)  # [B, 64]
+        x_cheat = self.tanh(x_cheat)
+        x_cheat = self.fc_cheat_hid3(x_cheat)  # [B, 64]
+
+        x = torch.cat((x_ego, x_other, x_cheat), dim=-1)
         x = self.fc_first(x)  # [B, 64]
 
         x = self.tanh(x)
