@@ -322,6 +322,7 @@ class IsaacDriveEnv:
         reward_info = {"reward_gt_norm": reward_gt_norm.detach(),
                        "reward_safe_norm": reward_safe_norm.detach(),
                        "loss": loss,
+                       "dis_gt": dis_gt,
                        }
         return reward_info
 
