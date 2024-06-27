@@ -16,12 +16,13 @@ SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
 # lr00005_acceleration_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_cheat_openLoop_2"  # 5700U 5900X 2070S
+RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_cheat_openLoop_3"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
-LOOP_MODE = "Open"  # Closed Open
+TRAIN_LOOP_MODE = "Open"  # Closed Open
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
+    isaac_drive_env.loop_mode = TRAIN_LOOP_MODE
     tensor_batch_obs = isaac_drive_env.reset(batch_num=TRAIN_BATCH_NUM, mode="Train")
     optimizer.zero_grad()
     list_tensor_time_loss = []
@@ -52,15 +53,17 @@ def epoch_train(agent, isaac_drive_env, optimizer):
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
     dis_gt = tensor_epoch_dis_gt.mean()
-    wandb.log({"train/dis_gt": dis_gt})
-    wandb.log({"train/loss_per_step": loss_per_step})
-    wandb.log({"train/reward_per_step_gt": reward_gt})
-    wandb.log({"train/reward_per_step_safe": reward_safe})
+    class_name = "test" + TRAIN_LOOP_MODE
+    wandb.log({class_name + "/dis_gt": dis_gt})
+    wandb.log({class_name + "/loss_per_step": loss_per_step})
+    wandb.log({class_name + "/reward_per_step_gt": reward_gt})
+    wandb.log({class_name + "/reward_per_step_safe": reward_safe})
     loss_final.backward()
     optimizer.step()
 
 
-def epoch_test(agent, isaac_drive_env):
+def epoch_test(agent, isaac_drive_env, loop_mode):
+    isaac_drive_env.loop_mode = loop_mode
     dict_tensor_batch_obs = isaac_drive_env.reset(batch_num=TEST_BATCH_NUM, mode="Test")
     list_tensor_time_loss = []
     list_tensor_time_reward_gt = []
@@ -85,10 +88,11 @@ def epoch_test(agent, isaac_drive_env):
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
     dis_gt = tensor_epoch_dis_gt.mean()
-    wandb.log({"test/dis_gt": dis_gt})
-    wandb.log({"test/loss_per_step": loss_per_step})
-    wandb.log({"test/reward_per_step_gt": reward_gt})
-    wandb.log({"test/reward_per_step_safe": reward_safe})
+    class_name = "test" + loop_mode
+    wandb.log({class_name + "/dis_gt": dis_gt})
+    wandb.log({class_name + "/loss_per_step": loss_per_step})
+    wandb.log({class_name + "/reward_per_step_gt": reward_gt})
+    wandb.log({class_name + "/reward_per_step_safe": reward_safe})
 
 
 def main():
@@ -97,7 +101,7 @@ def main():
         resume=RESUME_NAME  # HjScenarioEnv
     )
 
-    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM, loop_mode=LOOP_MODE)
+    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM, loop_mode=TRAIN_LOOP_MODE)
     # obs_dim = isaac_drive_env.observation_space.shape[0]
     # agent = Agent(obs_dim=obs_dim)
     agent = AgentAcceleration()  # obs_dim=obs_dim
@@ -114,7 +118,8 @@ def main():
 
     for _ in tqdm.tqdm(range(num_epoch)):
         epoch_train(agent, isaac_drive_env, optimizer)
-        epoch_test(agent, isaac_drive_env)
+        epoch_test(agent, isaac_drive_env, loop_mode="Open")
+        epoch_test(agent, isaac_drive_env, loop_mode="Closed")
         torch.save(agent.state_dict(), "./data/interim/state_dict_grad.pt")
 
     print("update network time: ", time.time() - start_time)  # 15 second
