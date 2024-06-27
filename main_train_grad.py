@@ -16,9 +16,9 @@ SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
 # lr00005_acceleration_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_cheat_closedLoop_2"  # 5700U 5900X 2070S
+RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_openLoop"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
-TRAIN_LOOP_MODE = "Closed"  # Closed Open
+TRAIN_LOOP_MODE = "Open"  # Closed Open
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):

@@ -47,15 +47,11 @@ class AgentAcceleration(nn.Module):
 
         self.fc_ego_first = nn.Linear(4, 64)
         self.fc_ego_hid1 = nn.Linear(64, 64)
-        # self.fc_ego_hid2 = nn.Linear(64, 64)
-        # self.fc_ego_hid3 = nn.Linear(64, 64)
 
-        self.fc_cheat_first = nn.Linear(2, 64)
-        self.fc_cheat_hid1 = nn.Linear(64, 64)
-        # self.fc_cheat_hid2 = nn.Linear(64+2, 64)
-        # self.fc_cheat_hid3 = nn.Linear(64+2, 64)
+        # self.fc_cheat_first = nn.Linear(2, 64)
+        # self.fc_cheat_hid1 = nn.Linear(64, 64)
 
-        self.fc_first = nn.Linear(64 + 64 + 64, 64)
+        self.fc_first = nn.Linear(64 + 64, 64)
         self.fc_last = nn.Linear(64, 2)
 
         self.relu = nn.ReLU()
@@ -99,20 +95,12 @@ class AgentAcceleration(nn.Module):
         x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
         x_ego = self.tanh(x_ego)
         x_ego = self.fc_ego_hid1(x_ego)  # [B, 64]
-        # x_ego = self.tanh(x_ego)
-        # x_ego = self.fc_ego_hid2(x_ego)  # [B, 64]
-        # x_ego = self.tanh(x_ego)
-        # x_ego = self.fc_ego_hid3(x_ego)  # [B, 64]
 
-        x_cheat = self.fc_cheat_first(tensor_batch_cheat)  # [B, 64]
-        x_cheat = self.tanh(x_cheat)
-        x_cheat = self.fc_cheat_hid1(x_cheat)  # [B, 64]
+        # x_cheat = self.fc_cheat_first(tensor_batch_cheat)  # [B, 64]
         # x_cheat = self.tanh(x_cheat)
-        # x_cheat = self.fc_cheat_hid2(torch.cat([x_cheat, tensor_batch_cheat], dim=-1))  # [B, 64]
-        # x_cheat = self.tanh(x_cheat)
-        # x_cheat = self.fc_cheat_hid3(torch.cat([x_cheat, tensor_batch_cheat], dim=-1))  # [B, 64]
+        # x_cheat = self.fc_cheat_hid1(x_cheat)  # [B, 64]
 
-        x = torch.cat((x_ego, x_other, x_cheat), dim=-1)
+        x = torch.cat((x_ego, x_other), dim=-1)  # , x_cheat
         x = self.fc_first(x)  # [B, 64]
 
         x = self.tanh(x)
