@@ -16,8 +16,9 @@ SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
 # lr00005_acceleration_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240626_5700U_grad_s100b90_networkFc_cheat_12"  # 5700U 5900X 2070S
+RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_cheat_openLoop_2"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
+LOOP_MODE = "Open"  # Closed Open
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
@@ -51,10 +52,10 @@ def epoch_train(agent, isaac_drive_env, optimizer):
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
     dis_gt = tensor_epoch_dis_gt.mean()
-    wandb.log({"train/distance/dis_gt": dis_gt})
-    wandb.log({"train/loss/loss_per_step": loss_per_step})
-    wandb.log({"train/reward/reward_per_step_gt": reward_gt})
-    wandb.log({"train/reward/reward_per_step_safe": reward_safe})
+    wandb.log({"train/dis_gt": dis_gt})
+    wandb.log({"train/loss_per_step": loss_per_step})
+    wandb.log({"train/reward_per_step_gt": reward_gt})
+    wandb.log({"train/reward_per_step_safe": reward_safe})
     loss_final.backward()
     optimizer.step()
 
@@ -84,10 +85,10 @@ def epoch_test(agent, isaac_drive_env):
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
     dis_gt = tensor_epoch_dis_gt.mean()
-    wandb.log({"test/distance/dis_gt": dis_gt})
-    wandb.log({"test/loss/loss_per_step": loss_per_step})
-    wandb.log({"test/reward/reward_per_step_gt": reward_gt})
-    wandb.log({"test/reward/reward_per_step_safe": reward_safe})
+    wandb.log({"test/dis_gt": dis_gt})
+    wandb.log({"test/loss_per_step": loss_per_step})
+    wandb.log({"test/reward_per_step_gt": reward_gt})
+    wandb.log({"test/reward_per_step_safe": reward_safe})
 
 
 def main():
@@ -96,7 +97,7 @@ def main():
         resume=RESUME_NAME  # HjScenarioEnv
     )
 
-    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
+    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM, loop_mode=LOOP_MODE)
     # obs_dim = isaac_drive_env.observation_space.shape[0]
     # agent = Agent(obs_dim=obs_dim)
     agent = AgentAcceleration()  # obs_dim=obs_dim

@@ -9,7 +9,6 @@ from matplotlib import pyplot as plt
 
 W_gt = 1.0
 W_safe = 0
-LOOP_MODE = "Open"  # Closed Open
 
 
 def get_file_names(path):
@@ -94,7 +93,7 @@ class IsaacDriveEnv:
                 tensor_all_vectornet_object_feature, tensor_all_vectornet_object_mask,
                 tensor_all_vectornet_static_feature)
 
-    def __init__(self, device, scene_num):
+    def __init__(self, device, scene_num, loop_mode):
         self.device = device
 
         list_str_path = self.get_fileName(scene_num)
@@ -113,6 +112,8 @@ class IsaacDriveEnv:
         # self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(202,))
         self.observation_space = "Dict"
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
+
+        self.loop_mode = loop_mode
 
     def sort_dis(self, tensor_batch_obs_other):
         norm = torch.linalg.vector_norm(tensor_batch_obs_other[:, :, 0:2], dim=2)
@@ -201,10 +202,10 @@ class IsaacDriveEnv:
             self.selected_scene_indexes]  # [B, 254, 10, 2]
 
         self.tensor_batch_oneTime_ego_posXYStart_relaStart = torch.zeros(self.batch_num, 2, device=self.device)
-        if LOOP_MODE == "Closed":
+        if self.loop_mode == "Closed":
             self.tensor_batch_oneTime_sim_posXYStart_relaStart = torch.rand(self.batch_num, 2,
                                                                             device=self.device) * 2  # [B, 2]
-        elif LOOP_MODE == "Open":
+        elif self.loop_mode == "Open":
             self.tensor_batch_oneTime_sim_posXYStart_relaStart = torch.zeros(self.batch_num, 2,
                                                                              device=self.device)  # [B, 2]
         else:
@@ -282,10 +283,10 @@ class IsaacDriveEnv:
 
     def step_main_simulation(self):
         # simulation
-        # if LOOP_MODE == "Closed":
+        # if self.loop_mode == "Closed":
         self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaStart.detach() + self.tensor_batch_oneTime_action_deltaPosXy
         self.tensor_batch_oneTime_sim_posXYStart_relaEgo = self.tensor_batch_oneTime_sim_posXYStart_relaStart - self.tensor_batch_oneTime_ego_posXYStart_relaStart  # [B, 2]
-        # elif LOOP_MODE == "Open":
+        # elif self.loop_mode == "Open":
         #     self.tensor_batch_oneTime_sim_posXYStart_relaEgo = torch.zeros(self.batch_num, 2)
         #     self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart
         # else:
@@ -370,7 +371,7 @@ class IsaacDriveEnv:
         info = {}
         info.update(reward_info)
 
-        if LOOP_MODE == "Open":
+        if self.loop_mode == "Open":
             self.tensor_batch_oneTime_sim_posXYStart_relaEgo = torch.zeros(self.batch_num, 2)
             self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart
 
