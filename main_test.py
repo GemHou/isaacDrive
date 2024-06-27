@@ -10,6 +10,7 @@ SCENE_NUM = 100
 BATCH_NUM = 1
 RENDER_FLAG = True
 TRAIN_TEST_MODE = "Test"  # Train Test
+TEST_LOOP_MODE = "Closed"  # Closed Open
 
 
 def prepare_agent():
@@ -46,7 +47,7 @@ def main():
     start_time = time.time()
 
     # prepare environment
-    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM)
+    isaac_drive_env = IsaacDriveEnv(device=DEVICE, scene_num=SCENE_NUM, loop_mode=TEST_LOOP_MODE)
 
     # prepare agent
     agent = prepare_agent()

@@ -16,9 +16,9 @@ SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
 # lr00005_acceleration_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_cheat_openLoop_3"  # 5700U 5900X 2070S
+RESUME_NAME = "20240627_5700U_grad_s100b90_networkFc_cheat_closedLoop_2"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
-TRAIN_LOOP_MODE = "Open"  # Closed Open
+TRAIN_LOOP_MODE = "Closed"  # Closed Open
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
@@ -53,7 +53,7 @@ def epoch_train(agent, isaac_drive_env, optimizer):
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
     dis_gt = tensor_epoch_dis_gt.mean()
-    class_name = "test" + TRAIN_LOOP_MODE
+    class_name = "train" + TRAIN_LOOP_MODE
     wandb.log({class_name + "/dis_gt": dis_gt})
     wandb.log({class_name + "/loss_per_step": loss_per_step})
     wandb.log({class_name + "/reward_per_step_gt": reward_gt})
