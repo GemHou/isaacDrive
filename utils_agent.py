@@ -35,25 +35,25 @@ class AgentAcceleration(nn.Module):
         self.other_encoder = "FC"  # FC Pool  # both is okay, but Pool is slower and worse
 
         if self.other_encoder == "FC":
-            self.fc_other_first = nn.Linear(50*4, 64)
-            self.fc_other_hid1 = nn.Linear(64, 64)
+            self.fc_other_first = nn.Linear(50*4, 64)  # 13k
+            self.fc_other_hid1 = nn.Linear(64, 64)  # 4k
         elif self.other_encoder == "Pool":
             self.fc_other_first = nn.Linear(4, 64)
-            self.fc_other_hid1 = nn.Linear(64, 64)
-            self.fc_other_hid2 = nn.Linear(64, 64)
-            self.fc_other_hid3 = nn.Linear(64, 64)
+            self.fc_other_hid1 = nn.Linear(64, 64)  # 4k
+            self.fc_other_hid2 = nn.Linear(64, 64)  # 4k
+            self.fc_other_hid3 = nn.Linear(64, 64)  # 4k
         else:
             raise
 
         self.fc_ego_first = nn.Linear(4, 64)
         self.fc_ego_hid1 = nn.Linear(64, 64)
-        self.fc_ego_hid2 = nn.Linear(64, 64)
-        self.fc_ego_hid3 = nn.Linear(64, 64)
+        # self.fc_ego_hid2 = nn.Linear(64, 64)
+        # self.fc_ego_hid3 = nn.Linear(64, 64)
 
         self.fc_cheat_first = nn.Linear(2, 64)
         self.fc_cheat_hid1 = nn.Linear(64, 64)
-        self.fc_cheat_hid2 = nn.Linear(64, 64)
-        self.fc_cheat_hid3 = nn.Linear(64, 64)
+        # self.fc_cheat_hid2 = nn.Linear(64+2, 64)
+        # self.fc_cheat_hid3 = nn.Linear(64+2, 64)
 
         self.fc_first = nn.Linear(64 + 64 + 64, 64)
         self.fc_last = nn.Linear(64, 2)
@@ -99,18 +99,18 @@ class AgentAcceleration(nn.Module):
         x_ego = self.fc_ego_first(tensor_batch_ego)  # [B, 64]
         x_ego = self.tanh(x_ego)
         x_ego = self.fc_ego_hid1(x_ego)  # [B, 64]
-        x_ego = self.tanh(x_ego)
-        x_ego = self.fc_ego_hid2(x_ego)  # [B, 64]
-        x_ego = self.tanh(x_ego)
-        x_ego = self.fc_ego_hid3(x_ego)  # [B, 64]
+        # x_ego = self.tanh(x_ego)
+        # x_ego = self.fc_ego_hid2(x_ego)  # [B, 64]
+        # x_ego = self.tanh(x_ego)
+        # x_ego = self.fc_ego_hid3(x_ego)  # [B, 64]
 
         x_cheat = self.fc_cheat_first(tensor_batch_cheat)  # [B, 64]
         x_cheat = self.tanh(x_cheat)
         x_cheat = self.fc_cheat_hid1(x_cheat)  # [B, 64]
-        x_cheat = self.tanh(x_cheat)
-        x_cheat = self.fc_cheat_hid2(x_cheat)  # [B, 64]
-        x_cheat = self.tanh(x_cheat)
-        x_cheat = self.fc_cheat_hid3(x_cheat)  # [B, 64]
+        # x_cheat = self.tanh(x_cheat)
+        # x_cheat = self.fc_cheat_hid2(torch.cat([x_cheat, tensor_batch_cheat], dim=-1))  # [B, 64]
+        # x_cheat = self.tanh(x_cheat)
+        # x_cheat = self.fc_cheat_hid3(torch.cat([x_cheat, tensor_batch_cheat], dim=-1))  # [B, 64]
 
         x = torch.cat((x_ego, x_other, x_cheat), dim=-1)
         x = self.fc_first(x)  # [B, 64]

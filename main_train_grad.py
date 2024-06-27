@@ -16,7 +16,7 @@ SCENE_NUM = 100
 TRAIN_BATCH_NUM = 90
 TEST_BATCH_NUM = 10
 # lr00005_acceleration_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240626_5700U_grad_s100b90_networkFc_cheat_7"  # 5700U 5900X 2070S
+RESUME_NAME = "20240626_5700U_grad_s100b90_networkFc_cheat_12"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
 
 
