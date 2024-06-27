@@ -23,3 +23,14 @@ conda install pytorch torchvision torchaudio cpuonly -c pytorch
 pip install matplotlib
 pip install tqdm
 ```
+
+# Train
+```bash
+python ./main_train_grad.py
+```
+
+# Test and Render
+
+```bash
+python ./main_test.py
+```
