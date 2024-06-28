@@ -6,10 +6,10 @@ from utils_agent import Agent, AgentAcceleration, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-SCENE_NUM = 100
+SCENE_NUM = 2
 BATCH_NUM = 1
 RENDER_FLAG = True
-TRAIN_TEST_MODE = "Test"  # Train Test
+TRAIN_TEST_MODE = "Train"  # Train Test
 TEST_LOOP_MODE = "Closed"  # Closed Open
 
 
