@@ -32,12 +32,13 @@ class AgentAcceleration(nn.Module):
     def __init__(self):  # , obs_dim
         super(AgentAcceleration, self).__init__()
 
-        self.other_encoder = "FC"  # FC Pool  # both is okay, but Pool is slower and worse
+        self.encoder_other = "FC"  # FC Pool  # both is okay, but Pool is slower and worse
+        self.decoder_method = "Speed"  # Speed Acceleration Vehicle
 
-        if self.other_encoder == "FC":
+        if self.encoder_other == "FC":
             self.fc_other_first = nn.Linear(50*4, 64)  # 13k
             self.fc_other_hid1 = nn.Linear(64, 64)  # 4k
-        elif self.other_encoder == "Pool":
+        elif self.encoder_other == "Pool":
             self.fc_other_first = nn.Linear(4, 64)
             self.fc_other_hid1 = nn.Linear(64, 64)  # 4k
             self.fc_other_hid2 = nn.Linear(64, 64)  # 4k
@@ -51,8 +52,9 @@ class AgentAcceleration(nn.Module):
         # self.fc_cheat_first = nn.Linear(2, 64)
         # self.fc_cheat_hid1 = nn.Linear(64, 64)
 
-        self.fc_first = nn.Linear(64 + 64, 64)
-        self.fc_last = nn.Linear(64, 2)
+
+        self.decoder_fc_first = nn.Linear(64 + 64, 64)
+        self.decoder_fc_last = nn.Linear(64, 2)
 
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
@@ -61,6 +63,36 @@ class AgentAcceleration(nn.Module):
         self.friction = 1.0  #
 
         # self.zero_params = nn.Parameter(torch.tensor(999.0))
+
+    def decode(self, tensor_batch_speed, tensor_batch_yaw, x_ego, x_other):
+        if self.decoder_method == "Acceleration":
+            x = torch.cat((x_ego, x_other), dim=-1)  # , x_cheat
+            x = self.decoder_fc_first(x)  # [B, 64]
+            x = self.tanh(x)
+            x = self.decoder_fc_last(x)  # [B, 2]
+            x = self.tanh(x)  # [B, 2] -1~1
+            action_accelerationXy = x * 9.81 * self.friction  # -10 ～ 10
+            tensor_batch_speedX = tensor_batch_speed * torch.cos(tensor_batch_yaw)
+            tensor_batch_speedY = tensor_batch_speed * torch.sin(tensor_batch_yaw)
+            tensor_batch_speedX_new = tensor_batch_speedX + action_accelerationXy[:, 0] * 0.1
+            tensor_batch_speedY_new = tensor_batch_speedY + action_accelerationXy[:, 1] * 0.1
+            tensor_batch_deltaPosX_new = tensor_batch_speedX_new * 0.1
+            tensor_batch_deltaPosY_new = tensor_batch_speedY_new * 0.1
+            action_deltaPosXy = torch.stack([tensor_batch_deltaPosX_new, tensor_batch_deltaPosY_new], dim=1)
+        elif self.decoder_method == "Speed":
+            x = torch.cat((x_ego, x_other), dim=-1)  # , x_cheat
+            x = self.decoder_fc_first(x)  # [B, 64]
+            x = self.tanh(x)
+            x = self.decoder_fc_last(x)  # [B, 2]
+            x = self.tanh(x)  # [B, 2] -1~1
+            tensor_batch_speedX_new = x[:, 0] * 10
+            tensor_batch_speedY_new = x[:, 1] * 10
+            tensor_batch_deltaPosX_new = tensor_batch_speedX_new * 0.1
+            tensor_batch_deltaPosY_new = tensor_batch_speedY_new * 0.1
+            action_deltaPosXy = torch.stack([tensor_batch_deltaPosX_new, tensor_batch_deltaPosY_new], dim=1)
+        else:
+            raise
+        return action_deltaPosXy
 
     def forward(self, dict_tensor_batch_obs):
         tensor_batch_obs_other = dict_tensor_batch_obs["tensor_batch_obs_other"]  # [B, 99, 2]
@@ -74,12 +106,12 @@ class AgentAcceleration(nn.Module):
         #                                      self.zero_params.expand_as(tensor_batch_obs_other),
         #                                      tensor_batch_obs_other)
 
-        if self.other_encoder == "FC":
+        if self.encoder_other == "FC":
             tensor_batch_obs_other_flat = tensor_batch_obs_other.reshape(-1, 50 * 4)
             x_other = self.fc_other_first(tensor_batch_obs_other_flat)  # [B, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid1(x_other)  # [B, 64]
-        elif self.other_encoder == "Pool":
+        elif self.encoder_other == "Pool":
             x_other = self.fc_other_first(tensor_batch_obs_other)  # [B, 99, 64]
             x_other = self.tanh(x_other)
             x_other = self.fc_other_hid1(x_other)  # [B, 99, 64]
@@ -100,24 +132,7 @@ class AgentAcceleration(nn.Module):
         # x_cheat = self.tanh(x_cheat)
         # x_cheat = self.fc_cheat_hid1(x_cheat)  # [B, 64]
 
-        x = torch.cat((x_ego, x_other), dim=-1)  # , x_cheat
-        x = self.fc_first(x)  # [B, 64]
-
-        x = self.tanh(x)
-        x = self.fc_last(x)  # [B, 2]
-        x = self.tanh(x)  # [B, 2] -1~1
-        action_accelerationXy = x * 9.81 * self.friction  # -10 ～ 10
-
-        tensor_batch_speedX = tensor_batch_speed * torch.cos(tensor_batch_yaw)
-        tensor_batch_speedY = tensor_batch_speed * torch.sin(tensor_batch_yaw)
-
-        tensor_batch_speedX_new = tensor_batch_speedX + action_accelerationXy[:, 0] * 0.1
-        tensor_batch_speedY_new = tensor_batch_speedY + action_accelerationXy[:, 1] * 0.1
-
-        tensor_batch_deltaPosX_new = tensor_batch_speedX_new * 0.1
-        tensor_batch_deltaPosY_new = tensor_batch_speedY_new * 0.1
-
-        action_deltaPosXy = torch.stack([tensor_batch_deltaPosX_new, tensor_batch_deltaPosY_new], dim=1)
+        action_deltaPosXy = self.decode(tensor_batch_speed, tensor_batch_yaw, x_ego, x_other)
 
         # action_deltaPosXy = None  # [B, 2]
         return action_deltaPosXy

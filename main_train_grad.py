@@ -15,8 +15,8 @@ RENDER_FLAG = True
 SCENE_NUM = 2
 TRAIN_BATCH_NUM = 1
 TEST_BATCH_NUM = 1
-# lr00005_acceleration_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240628_5700U_grad_s2b1_networkFc_closedLoop"  # 5700U 5900X 2070S
+# lr00005_randObs_sort_resetRandom2_removeCheat_
+RESUME_NAME = "20240628_5700U_grad_s2b1_networkFc_closedLoop_decoderSpeed"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
 TRAIN_LOOP_MODE = "Closed"  # Closed Open
 
