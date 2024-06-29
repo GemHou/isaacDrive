@@ -6,7 +6,7 @@ from utils_agent import Agent, AgentAcceleration, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
-SCENE_NUM = 2
+SCENE_NUM = 10
 BATCH_NUM = 1
 RENDER_FLAG = True
 TRAIN_TEST_MODE = "Train"  # Train Test
@@ -23,7 +23,7 @@ def prepare_agent():
 
 
 def sim_one_epoch(isaac_drive_env, agent):
-    tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, mode=TRAIN_TEST_MODE)  # Train Test
+    tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, data_mode=TRAIN_TEST_MODE)  # Train Test
     list_tensor_time_reward = []
     while True:
         if True:  # network

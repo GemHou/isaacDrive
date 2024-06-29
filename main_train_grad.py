@@ -12,18 +12,18 @@ torch.autograd.set_detect_anomaly(True)
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 RENDER_FLAG = True
-SCENE_NUM = 2
-TRAIN_BATCH_NUM = 1
+SCENE_NUM = 10
+TRAIN_BATCH_NUM = 9
 TEST_BATCH_NUM = 1
 # lr00005_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "20240628_5700U_grad_s2b1_networkFc_closedLoop_decoderSpeed"  # 5700U 5900X 2070S
+RESUME_NAME = "2024062912_5700U_grad_s10b9_networkFc_closedLoop_decoderSpeed"  # 5700U 5900X 2070S
 NUM_EPOCH = 100
 TRAIN_LOOP_MODE = "Closed"  # Closed Open
 
 
 def epoch_train(agent, isaac_drive_env, optimizer):
     isaac_drive_env.loop_mode = TRAIN_LOOP_MODE
-    tensor_batch_obs = isaac_drive_env.reset(batch_num=TRAIN_BATCH_NUM, mode="Train")
+    tensor_batch_obs = isaac_drive_env.reset(batch_num=TRAIN_BATCH_NUM, data_mode="Train")
     optimizer.zero_grad()
     list_tensor_time_loss = []
     list_tensor_time_reward_gt = []
@@ -62,9 +62,9 @@ def epoch_train(agent, isaac_drive_env, optimizer):
     optimizer.step()
 
 
-def epoch_test(agent, isaac_drive_env, loop_mode):
+def epoch_test(agent, isaac_drive_env, loop_mode, data_mode):
     isaac_drive_env.loop_mode = loop_mode
-    dict_tensor_batch_obs = isaac_drive_env.reset(batch_num=TEST_BATCH_NUM, mode="Test")
+    dict_tensor_batch_obs = isaac_drive_env.reset(batch_num=TEST_BATCH_NUM, data_mode=data_mode)
     list_tensor_time_loss = []
     list_tensor_time_reward_gt = []
     list_tensor_time_reward_safe = []
@@ -88,7 +88,12 @@ def epoch_test(agent, isaac_drive_env, loop_mode):
     reward_gt = tensor_epoch_reward_gt.mean()
     reward_safe = tensor_epoch_reward_safe.mean()
     dis_gt = tensor_epoch_dis_gt.mean()
-    class_name = "test" + loop_mode
+    if data_mode == "Test":
+        class_name = "test" + loop_mode
+    elif data_mode == "Train":
+        class_name = "train" + loop_mode
+    else:
+        raise
     wandb.log({class_name + "/dis_gt": dis_gt})
     wandb.log({class_name + "/loss_per_step": loss_per_step})
     wandb.log({class_name + "/reward_per_step_gt": reward_gt})
@@ -118,8 +123,14 @@ def main():
 
     for _ in tqdm.tqdm(range(num_epoch)):
         epoch_train(agent, isaac_drive_env, optimizer)
-        epoch_test(agent, isaac_drive_env, loop_mode="Open")
-        epoch_test(agent, isaac_drive_env, loop_mode="Closed")
+        epoch_test(agent, isaac_drive_env, loop_mode="Open", data_mode="Test")
+        epoch_test(agent, isaac_drive_env, loop_mode="Closed", data_mode="Test")
+        if TRAIN_LOOP_MODE == "Closed":
+            epoch_test(agent, isaac_drive_env, loop_mode="Open", data_mode="Train")
+        elif TRAIN_LOOP_MODE == "Open":
+            epoch_test(agent, isaac_drive_env, loop_mode="Closed", data_mode="Train")
+        else:
+            raise
         torch.save(agent.state_dict(), "./data/interim/state_dict_grad.pt")
 
     print("update network time: ", time.time() - start_time)  # 15 second

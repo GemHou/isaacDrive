@@ -176,13 +176,13 @@ class IsaacDriveEnv:
         }
         return dict_tensor_batch_obs
 
-    def reset(self, batch_num, mode="Train"):
+    def reset(self, batch_num, data_mode):  # ="Train"
         self.batch_num = batch_num
-        if mode == "Train":
+        if data_mode == "Train":
             # allTest_bag_num
             allTrain_bag_num = int(self.all_bag_num * 0.9)
             scene_indexes = list(range(allTrain_bag_num))
-        elif mode == "Test":
+        elif data_mode == "Test":
             allTrain_bag_num = int(self.all_bag_num * 0.9)
             # allTest_bag_num = self.all_bag_num - allTrain_bag_num
             scene_indexes = list(range(allTrain_bag_num, self.all_bag_num))
