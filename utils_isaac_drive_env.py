@@ -378,7 +378,7 @@ class IsaacDriveEnv:
         info.update(reward_info)
 
         if self.loop_mode == "Open":
-            self.tensor_batch_oneTime_sim_posXYStart_relaEgo = torch.zeros(self.batch_num, 2)
+            self.tensor_batch_oneTime_sim_posXYStart_relaEgo = torch.zeros(self.batch_num, 2, device=self.device)
             self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart
 
         return self.reward, done, dict_tensor_batch_obs, info
