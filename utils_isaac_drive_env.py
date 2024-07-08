@@ -38,6 +38,12 @@ class IsaacDriveEnv:
             list_str_path = get_file_names("data/raw/data_left_100/")
         list_str_path = list_str_path[:scene_num]
         print("len(list_str_path): ", len(list_str_path))
+        try:
+            assert len(list_str_path) > 0
+        except AssertionError:
+            print("Warning!!!!!! you do not have the dataset...")
+            print("Warning!!!!!! please change line 24 False to True to use the template dataset or contact gem hou...")
+            raise
         return list_str_path
 
     def trans_fileName_to_npz(self, list_str_path):
@@ -126,7 +132,7 @@ class IsaacDriveEnv:
         replace_index = tensor_batch_obs_other_mask.unsqueeze(-1).repeat_interleave(4, dim=-1) == 0
         tensor_batch_obs_other = torch.where(
             replace_index,
-            torch.tensor(9999.0).expand_as(tensor_batch_obs_other),
+            torch.tensor(9999.0, device=self.device).expand_as(tensor_batch_obs_other),
             tensor_batch_obs_other)  # [B, 99, 4]
         return tensor_batch_obs_other
 
@@ -372,7 +378,7 @@ class IsaacDriveEnv:
         info.update(reward_info)
 
         if self.loop_mode == "Open":
-            self.tensor_batch_oneTime_sim_posXYStart_relaEgo = torch.zeros(self.batch_num, 2)
+            self.tensor_batch_oneTime_sim_posXYStart_relaEgo = torch.zeros(self.batch_num, 2, device=self.device)
             self.tensor_batch_oneTime_sim_posXYStart_relaStart = self.tensor_batch_oneTime_sim_posXYStart_relaEgo + self.tensor_batch_oneTime_ego_posXYStart_relaStart
 
         return self.reward, done, dict_tensor_batch_obs, info

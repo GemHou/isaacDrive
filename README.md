@@ -22,6 +22,8 @@ conda install pytorch torchvision torchaudio cpuonly -c pytorch
 ```bash
 pip install matplotlib
 pip install tqdm
+pip install wandb
+pip install gym
 ```
 
 # Train
