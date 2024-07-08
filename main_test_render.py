@@ -8,7 +8,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 SCENE_NUM = 10
 BATCH_NUM = 1
-RENDER_FLAG = True
+RENDER_FLAG = True  # True False
 TRAIN_TEST_MODE = "Train"  # Train Test
 TEST_LOOP_MODE = "Closed"  # Closed Open
 
