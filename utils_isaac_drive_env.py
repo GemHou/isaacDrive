@@ -36,6 +36,8 @@ class IsaacDriveEnv:
             ]
         else:
             list_str_path = get_file_names("data/raw/data_left_100/")
+            list_str_path = list_str_path * 10
+        assert scene_num <= len(list_str_path)
         list_str_path = list_str_path[:scene_num]
         print("len(list_str_path): ", len(list_str_path))
         try:

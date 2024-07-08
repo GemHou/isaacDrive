@@ -5,9 +5,9 @@ import torch
 from utils_agent import Agent, AgentAcceleration, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
-DEVICE = torch.device("cpu")  # cuda:0 cpu
-SCENE_NUM = 100
-BATCH_NUM = 90
+DEVICE = torch.device("cuda:0")  # cuda:0 cpu
+SCENE_NUM = 184  # 184 185
+BATCH_NUM = int(SCENE_NUM*0.9)
 RENDER_FLAG = False  # True False
 TRAIN_TEST_MODE = "Train"  # Train Test
 TEST_LOOP_MODE = "Closed"  # Closed Open
@@ -50,7 +50,7 @@ def main():
 
     start_time = time.time()
     for _ in tqdm.tqdm(range(50)):
-        state_dict = torch.load("data/interim/state_dict_grad.pt", map_location=DEVICE)
+        # state_dict = torch.load("data/interim/state_dict_grad.pt", map_location=DEVICE)
         # agent.load_state_dict(state_dict)
         sim_one_epoch(isaac_drive_env)
 
