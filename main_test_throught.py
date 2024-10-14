@@ -6,7 +6,7 @@ import numpy as np
 from utils_agent import Agent, AgentAcceleration, AgentVehicleDynamic
 from utils_isaac_drive_env import IsaacDriveEnv
 
-DEVICE = torch.device("cuda:0")  # cuda:0 cpu
+DEVICE = torch.device("cpu")  # cuda:0 cpu
 SCENE_NUM = 184  # 184 185
 BATCH_NUM = int(SCENE_NUM*0.9)
 RENDER_FLAG = False  # True False
