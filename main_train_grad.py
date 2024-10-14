@@ -10,13 +10,13 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 torch.autograd.set_detect_anomaly(True)
 
-DEVICE = torch.device("cpu")  # cuda:0 cpu
+DEVICE = torch.device("cuda:0")  # cuda:0 cpu
 RENDER_FLAG = True
 SCENE_NUM = 2
 TRAIN_BATCH_NUM = 1
 TEST_BATCH_NUM = 1
 # lr00005_randObs_sort_resetRandom2_removeCheat_
-RESUME_NAME = "2024063016_9700K_grad_s2b1_networkFc_closedLoop_decoderSpeed_4"  # 5700U 5900X 2070S 9700K 2080T
+RESUME_NAME = "2024101422_9700K_grad_s2b1"  # 5700U 5900X 2070S 9700K 2080T
 NUM_EPOCH = 100
 TRAIN_LOOP_MODE = "Closed"  # Closed Open
 
@@ -111,7 +111,7 @@ def main():
     # agent = Agent(obs_dim=obs_dim)
     agent = AgentAcceleration()  # obs_dim=obs_dim
     # agent = AgentVehicleDynamic(obs_dim=obs_dim)
-    if True:
+    if False:
         state_dict = torch.load("./data/interim/state_dict_grad.pt", map_location=DEVICE)
         agent.load_state_dict(state_dict)
     agent.to(DEVICE)

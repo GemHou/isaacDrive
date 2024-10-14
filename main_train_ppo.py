@@ -11,7 +11,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 NUM_EPOCH = 1000
 BATCH_NUM = 100
-RESUME_NAME = "ppo_s100b100_20240611"
+RESUME_NAME = "ppo_s100b100_20241014"
 
 
 def mlp(sizes, activation, output_activation=nn.Identity):
