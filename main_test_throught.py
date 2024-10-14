@@ -8,7 +8,7 @@ from utils_isaac_drive_env import IsaacDriveEnv
 
 DEVICE = torch.device("cpu")  # cuda:0 cpu
 SCENE_NUM = 184  # 184 185
-BATCH_NUM = int(SCENE_NUM*0.9)
+BATCH_NUM = 160  # int(SCENE_NUM*0.9)
 RENDER_FLAG = False  # True False
 TRAIN_TEST_MODE = "Train"  # Train Test
 TEST_LOOP_MODE = "Closed"  # Closed Open
@@ -24,6 +24,7 @@ def prepare_agent():
 
 
 def sim_one_epoch(isaac_drive_env):
+    print("BATCH_NUM: ", BATCH_NUM)
     tensor_batch_obs = isaac_drive_env.reset(batch_num=BATCH_NUM, data_mode=TRAIN_TEST_MODE)  # Train Test
     list_tensor_time_reward = []
     start_time = time.time()
