@@ -34,5 +34,5 @@ python ./main_train_grad.py
 # Test and Render
 
 ```bash
-python ./main_test.py
+python ./main_test_render.py
 ```
