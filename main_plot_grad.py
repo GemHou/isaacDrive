@@ -29,7 +29,9 @@ ax.set_ylabel(r'Reward')  # 使用LaTeX语法设置上标
 ax.set_xlabel('Training iterations')
 # ax.set_xticks(np.arange(0, 21, 1))  # 设置x轴刻度为0到100，步长为10
 # ax.set_xticklabels((f'{i}' for i in range(0, 101, 10)))  # 设置x轴刻度标签
-ax.legend(frameon=False)
+ax.legend(frameon=False, loc="upper left")
+
+ax.set_ylim(-12000, 6000)  # 假设最小值设置为-10000，可以根据你的数据调整
 
 # 保存图形
 plt.savefig('data/processed/plot_grad.svg', format='svg', bbox_inches='tight')
