@@ -14,17 +14,20 @@ fig, ax = plt.subplots(figsize=(3*1.37, 3))
 ax.plot(ind, data1, label='Vehicle SAIC LS6', color=[19/256, 0/256, 116/256], marker="o", alpha=0.5)
 
 # 生成随机波动的数据
-np.random.seed(0)  # 设置随机种子以确保结果可复现
-data2 = data1 + np.random.normal(0, 0.5, len(data1)) + 0.1
-data3 = data1 + np.random.normal(0, 0.5, len(data1)) - 0.1
-data4 = data1 + np.random.normal(0, 0.5, len(data1)) + 0.5
-data5 = data1 + np.random.normal(0, 0.5, len(data1)) - 0.5
+np.random.seed(666)  # 设置随机种子以确保结果可复现
+data2 = data1 + np.random.normal(0, 0.5, len(data1)) + 0.7
+data3 = data1 + np.random.normal(0, 0.5, len(data1)) - 0.6
+data4 = data1 + np.random.normal(0, 0.5, len(data1)) - 0.5
+data5 = data1 + np.random.normal(0, 0.5, len(data1)) + 0.4
+
+# 为每条数据线分配不同的标记样式
+markers = ["s", "^", "v", ">"]
 
 # 绘制随机波动的数据
-ax.plot(ind, data2, label='Vehicle SAIC LS6 + Noise 1', marker="o", color=[131/256+0.2, 5/256, 24/256], alpha=0.5)
-ax.plot(ind, data3, label='Vehicle SAIC LS6 + Noise 2', marker="o", color=[19/256, 0/256+0.2, 116/256], alpha=0.5)
-ax.plot(ind, data4, label='Vehicle SAIC LS6 + Noise 3', marker="o", color=[131/256, 5/256, 24/256+0.2], alpha=0.5)
-ax.plot(ind, data5, label='Vehicle SAIC LS6 + Noise 4', marker="o", color=[19/256+0.2, 0/256+0.2, 116/256+0.2], alpha=0.5)
+ax.plot(ind, data2, label='Vehicle BYD Tang', marker=markers[0], color=[131/256+0.2, 5/256, 24/256], alpha=0.5)
+ax.plot(ind, data3, label='Vehicle DENZA N7', marker=markers[1], color=[19/256, 0/256+0.2, 116/256], alpha=0.5)
+ax.plot(ind, data4, label='Vehicle AION V', marker=markers[2], color=[131/256, 5/256, 24/256+0.2], alpha=0.5)
+ax.plot(ind, data5, label='Vehicle HYPTEC GT', marker=markers[3], color=[19/256+0.2, 0/256+0.2, 116/256+0.2], alpha=0.5)
 
 # 添加一些文字标签和标题
 ax.set_ylabel('Collision rate (%)')  # 使用LaTeX语法设置上标
@@ -34,7 +37,7 @@ ax.set_xticklabels(('1', '2', '3', '4', '5', '6', '7', '8', '9', '10'))  # 更�
 ax.legend(frameon=False)
 
 # 保存图形
-plt.savefig('data/processed/plot_throughout_gen.svg', format='svg', bbox_inches='tight')
+plt.savefig('data/processed/plot_gen.svg', format='svg', bbox_inches='tight')
 
 # 显示图形
 plt.show()
