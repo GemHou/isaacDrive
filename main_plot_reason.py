@@ -26,7 +26,7 @@ ax.set_ylabel(r'Disengagement Rate $( \times 10^{-4})$')  # 使用LaTeX语法设
 ax.set_xticks(ind + width / 2)
 ax.set_xticklabels(('Vehicle\nCollision', 'Pedestrian\nCollision',
                     'Road\nCollision',
-                    'Extremely\nBrake', 'Unstable\nWheel'), fontsize=8)
+                    'Extremely\nBrake', 'Unstable\nWheel'), fontsize=8.5)
 ax.legend(frameon=False)
 
 plt.savefig('data/processed/plot_reason.svg', format='svg', bbox_inches='tight')
