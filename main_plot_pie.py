@@ -5,12 +5,13 @@ import numpy as np
 data = [1433, 433, 1075, 2297, 970, 434, 2418, 457]
 
 # 创建一个标签列表，用于饼图的每个部分
-labels = ['Cutin', 'Brake', 'LaneChange', 'Cross', 'Combine', 'StartUp', 'Cruise', 'Yield']
-labels2 = ['Cutin\n1433', 'Brake\n433', 'LaneChange\n1075', 'Cross\n2297', 'Combine\n970', 'StartUp\n434', 'Cruise\n2418', 'Yield\n457']
+labels = ['Cut-in', 'Brake', 'Lane-change', 'Cross', 'Merge', 'Start-up', 'Cruise', 'U-turn']
+labels2 = ['Cut-in\n1433', 'Brake\n433', 'Lane-change\n1075', 'Cross\n2297', 'Combine\n970', 'Start-up\n434',
+           'Cruise\n2418', 'U-turn\n457']
 
 # 定义两种颜色
-color1 = [19/256+0.15, 0/256+0.15, 116/256+0.15]
-color2 = [131/256+0.15, 5/256+0.15, 24/256+0.15]
+color1 = [19 / 256 + 0.15, 0 / 256 + 0.15, 116 / 256 + 0.15]
+color2 = [131 / 256 + 0.15, 5 / 256 + 0.15, 24 / 256 + 0.15]
 
 # 创建颜色列表，交替使用两种颜色，并添加随机变化
 colors = []
@@ -24,7 +25,7 @@ for i in range(len(data)):
     colors.append(random_color)
 
 # 绘制饼图
-plt.figure(figsize=(3*1.37, 3))
+plt.figure(figsize=(3 * 1.37, 3))
 plt.pie(data,
         labels=labels2,
         autopct=lambda pct: f"{pct:.0f}%",
