@@ -30,9 +30,9 @@ ind = (bin_edges1[:-1] + bin_edges1[1:]) / 2
 width = 0.16
 
 # 创建一个图形框架
-fig, ax = plt.subplots(figsize=(3*1.37, 3), facecolor='grey')
+fig, ax = plt.subplots(figsize=(3*1.00, 3))  # , facecolor='grey'
 
-ax.set_facecolor('grey')
+# ax.set_facecolor('grey')
 
 # 绘制第一组数据的柱状图
 rects1 = ax.bar(ind, hist1, width, label='MotionLM', color=[19/256, 0/256, 116/256], alpha=0.5)
@@ -43,6 +43,8 @@ rects2 = ax.bar(ind, hist2, width, label='SDRL(Ours)', color=[131/256, 5/256, 24
 # 计算均值
 mean1 = np.mean(data1)
 mean2 = np.mean(data2)
+
+ax.set_ylim(0, 1.5)
 
 # 添加均值的虚线
 ax.axvline(x=mean1, color=[19/256, 0/256, 116/256], linestyle='--')  # , label=f'Mean of MotionLM: {mean1:.2f}'
